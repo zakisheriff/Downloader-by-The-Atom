@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { ArrowRight, Link2 } from "lucide-react";
 import styles from "@/components/HeroSection.module.css";
 
@@ -125,12 +124,7 @@ export default function HeroSection() {
   return (
     <section className={styles.hero}>
       <div className={styles.glow} />
-      <motion.div
-        className={styles.content}
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className={styles.content}>
         <h1>Paste the link.</h1>
 
         <div className={styles.inputCard}>
@@ -158,7 +152,7 @@ export default function HeroSection() {
             );
           })}
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

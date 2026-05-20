@@ -10,8 +10,18 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
   const [downloading, setDownloading] = useState(false);
   const { showToast } = useToast();
   const Icon = format.type === "audio" ? Music4 : PlaySquare;
+  const isBlocked = Boolean(format.disabled);
 
   const handleDownload = async () => {
+    if (isBlocked) {
+      showToast({
+        title: "Not available on this server",
+        description: format.unavailableReason || "This format cannot be prepared on the current server yet.",
+        variant: "warning"
+      });
+      return;
+    }
+
     const params = new URLSearchParams({
       url: sourceUrl,
       format: format.selector,
@@ -67,11 +77,12 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         <span>{format.type === "audio" ? "Audio" : "Video"}</span>
         <span>{format.sizeLabel}</span>
         <span>{format.ext.toUpperCase()}</span>
+        {isBlocked ? <span>Unavailable</span> : null}
       </div>
 
-      <button onClick={handleDownload} className={styles.button} disabled={downloading}>
+      <button onClick={handleDownload} className={styles.button} disabled={downloading || isBlocked}>
         {downloading ? <LoaderCircle size={16} className={styles.spin} /> : <ArrowDownToLine size={16} />}
-        {downloading ? "Preparing..." : "Download"}
+        {downloading ? "Preparing..." : isBlocked ? "Unavailable" : "Download"}
       </button>
     </GlassCard>
   );

@@ -158,6 +158,7 @@ function buildVideoGroups(formats = []) {
       selector: progressive ? format.format_id : `${format.format_id}+bestaudio/best`,
       mode,
       type: "video",
+      isAdaptive: !progressive,
       ext: normalizeExt(format.ext, "mp4"),
       container,
       label: resolution,
@@ -232,6 +233,7 @@ function buildAudioGroups(formats = []) {
         selector: "bestaudio/best",
         mode: "extract-audio",
         type: "audio",
+        isAdaptive: false,
         ext: "mp3",
         container: "MP3",
         label: "Best available",
@@ -258,6 +260,7 @@ function normalizeFormats(info) {
       selector: "best",
       mode: "direct",
       type: "video",
+      isAdaptive: false,
       ext: normalizeExt(info.ext, "mp4"),
       container: String(info.ext || "file").toUpperCase(),
       label: `Best available ${String(info.ext || "file").toUpperCase()}`,
@@ -274,6 +277,37 @@ function normalizeFormats(info) {
       flat: [fallback]
     };
   }
+
+  return { video, audio, flat };
+}
+
+function applyServerAvailability(formats, serverWarning) {
+  if (!serverWarning) {
+    return formats;
+  }
+
+  const markItem = (item) => {
+    if (item.type === "video" && item.isAdaptive) {
+      return {
+        ...item,
+        disabled: true,
+        unavailableReason: serverWarning,
+        note: `${item.note} • currently unavailable on this server`
+      };
+    }
+
+    return item;
+  };
+
+  const video = formats.video.map((group) => ({
+    ...group,
+    items: group.items.map(markItem)
+  }));
+  const audio = formats.audio.map((group) => ({
+    ...group,
+    items: group.items.map(markItem)
+  }));
+  const flat = [...video.flatMap((group) => group.items), ...audio.flatMap((group) => group.items)];
 
   return { video, audio, flat };
 }
@@ -297,7 +331,9 @@ export async function inspectMedia(sourceUrl) {
     );
 
     const info = JSON.parse(stdout);
-    const formats = normalizeFormats(info);
+    const baseFormats = normalizeFormats(info);
+    const serverWarning = normalizeWarningText(stderr);
+    const formats = applyServerAvailability(baseFormats, serverWarning);
     const title = sanitizeFilename(info.title || "Untitled media", "Untitled media");
 
     return {
@@ -315,7 +351,7 @@ export async function inspectMedia(sourceUrl) {
         video: formats.video,
         audio: formats.audio
       },
-      serverWarning: normalizeWarningText(stderr)
+      serverWarning
     };
   } catch (error) {
     if (error.code === "ENOENT") {
