@@ -1,0 +1,22 @@
+.page {
+  display: grid;
+  gap: 18px;
+  width: min(var(--container), calc(100% - 48px));
+  margin: 0 auto;
+  padding: 32px 0 56px;
+}
+
+@media (max-width: 900px) {
+  .page {
+    width: min(var(--container), calc(100% - 32px));
+    padding: 24px 0 42px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    width: min(var(--container), calc(100% - 20px));
+    padding: 18px 0 28px;
+    gap: 14px;
+  }
+}

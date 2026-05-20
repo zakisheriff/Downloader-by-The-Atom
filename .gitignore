@@ -1,0 +1,5 @@
+.next
+.next-fetch
+node_modules
+.env.local
+npm-debug.log*

@@ -1,0 +1,164 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { ArrowRight, Link2 } from "lucide-react";
+import styles from "@/components/HeroSection.module.css";
+
+// Official YouTube Brand Icon (Red play shape + white triangle)
+const YouTubeIcon = ({ size }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    style={{ display: "block" }}
+  >
+    <path
+      d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.518 3.545 12 3.545 12 3.545s-7.518 0-9.388.507a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.87.507 9.388.507 9.388.507s7.518 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837z"
+      fill="#FF0000"
+    />
+    <path d="M9.545 15.568V8.432L15.818 12z" fill="#FFFFFF" />
+  </svg>
+);
+
+// Official Instagram Brand Icon with gradient path
+const InstagramIcon = ({ size }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    style={{ display: "block" }}
+  >
+    <defs>
+      <linearGradient id="instagram-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#f09433" />
+        <stop offset="25%" stopColor="#e6683c" />
+        <stop offset="50%" stopColor="#dc2743" />
+        <stop offset="75%" stopColor="#cc2366" />
+        <stop offset="100%" stopColor="#bc1888" />
+      </linearGradient>
+    </defs>
+    <path
+      d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"
+      fill="url(#instagram-gradient)"
+    />
+  </svg>
+);
+
+// Official TikTok Brand Icon with cyan and magenta offset lines
+const TikTokIcon = ({ size }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    style={{ display: "block" }}
+  >
+    <g transform="translate(1, 1)">
+      <path
+        d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .8.11V9.4a6.27 6.27 0 0 0-3.1-.3A6.35 6.35 0 0 0 3 15.46a6.35 6.35 0 0 0 10.93 4.77 6.18 6.18 0 0 0 1.9-4.77V7.82a9.16 9.16 0 0 0 3.76 1.76V6.69z"
+        fill="#25F4EE"
+        transform="translate(-0.6, -0.6)"
+      />
+      <path
+        d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .8.11V9.4a6.27 6.27 0 0 0-3.1-.3A6.35 6.35 0 0 0 3 15.46a6.35 6.35 0 0 0 10.93 4.77 6.18 6.18 0 0 0 1.9-4.77V7.82a9.16 9.16 0 0 0 3.76 1.76V6.69z"
+        fill="#FE2C55"
+        transform="translate(0.6, 0.6)"
+      />
+      <path
+        d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .8.11V9.4a6.27 6.27 0 0 0-3.1-.3A6.35 6.35 0 0 0 3 15.46a6.35 6.35 0 0 0 10.93 4.77 6.18 6.18 0 0 0 1.9-4.77V7.82a9.16 9.16 0 0 0 3.76 1.76V6.69z"
+        fill="currentColor"
+      />
+    </g>
+  </svg>
+);
+
+// Official X Brand Icon (Modern letter glyph)
+const XIcon = ({ size }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    fill="currentColor"
+    style={{ display: "block" }}
+  >
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+// Official Facebook Brand Icon (Blue background with white f)
+const FacebookIcon = ({ size }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    style={{ display: "block" }}
+  >
+    <circle cx="12" cy="12" r="12" fill="#1877F2" />
+    <path
+      d="M14 20h-3v-8H9.5V9h1.5V7.5C11 5.5 12.3 4 14.5 4c.9 0 1.7.1 1.7.1V7h-1.3c-.9 0-1.1.4-1.1 1v1h2.5l-.3 3h-2.2v8z"
+      fill="#FFFFFF"
+    />
+  </svg>
+);
+
+const supportedApps = [
+  { label: "YouTube", icon: YouTubeIcon, size: 18 },
+  { label: "Instagram", icon: InstagramIcon, size: 18 },
+  { label: "TikTok", icon: TikTokIcon, size: 18 },
+  { label: "X", icon: XIcon, size: 15 },
+  { label: "Facebook", icon: FacebookIcon, size: 18 }
+];
+
+export default function HeroSection() {
+  const [input, setInput] = useState("");
+  const router = useRouter();
+
+  const handleStart = () => {
+    if (!input.trim()) {
+      return;
+    }
+
+    router.push(`/dashboard?url=${encodeURIComponent(input.trim())}`);
+  };
+
+  return (
+    <section className={styles.hero}>
+      <div className={styles.glow} />
+      <motion.div
+        className={styles.content}
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h1>Paste the link.</h1>
+
+        <div className={styles.inputCard}>
+          <div className={styles.inputWrap}>
+            <Link2 size={18} />
+            <input
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Paste https://youtube.com/... or any supported public link"
+            />
+          </div>
+          <button onClick={handleStart}>
+            Find media
+          </button>
+        </div>
+
+        <div className={styles.appRow} aria-label="Supported platforms">
+          {supportedApps.map((app) => {
+            const Icon = app.icon;
+
+            return (
+              <div key={app.label} className={styles.appBadge} title={app.label}>
+                {Icon ? <Icon size={app.size} /> : null}
+              </div>
+            );
+          })}
+        </div>
+      </motion.div>
+    </section>
+  );
+}
