@@ -15,6 +15,8 @@ import {
 const execFileAsync = promisify(execFile);
 const YT_DLP_BIN = process.env.YT_DLP_BIN || "yt-dlp";
 const TMP_ROOT = path.join(os.tmpdir(), "fetch-by-the-atom");
+const ALLOW_YOUTUBE_ADAPTIVE = process.env.ALLOW_YOUTUBE_ADAPTIVE !== "false";
+export const activeDownloads = new Map();
 
 function createYtError(message, statusCode = 500) {
   const error = new Error(message);
@@ -58,6 +60,11 @@ function guessMimeType(ext = "") {
 
 function normalizeExt(ext = "", fallback = "mp4") {
   return String(ext || fallback).toLowerCase();
+}
+
+function isYouTubeLikeSource(value = "") {
+  const normalized = String(value || "").toLowerCase();
+  return normalized.includes("youtube") || normalized.includes("youtu.be");
 }
 
 function getCodecPriority(format) {
@@ -152,7 +159,7 @@ function buildVideoGroups(formats = []) {
     const mode = progressive ? "direct" : "merge";
     const note = progressive
       ? [resolution, fps, "ready with audio"].filter(Boolean).join(" • ")
-      : [resolution, fps, "video merged with audio on the server"].filter(Boolean).join(" • ");
+      : [resolution, fps, "server merge required"].filter(Boolean).join(" • ");
     const option = {
       id: `video:${format.format_id}:${mode}`,
       selector: progressive ? format.format_id : `${format.format_id}+bestaudio/best`,
@@ -281,8 +288,15 @@ function normalizeFormats(info) {
   return { video, audio, flat };
 }
 
-function applyServerAvailability(formats, serverWarning) {
-  if (!serverWarning) {
+function applyServerAvailability(formats, { serverWarning = "", sourceUrl = "", sourceName = "" } = {}) {
+  const blockAdaptiveYouTube = !ALLOW_YOUTUBE_ADAPTIVE && (
+    isYouTubeLikeSource(sourceUrl) || isYouTubeLikeSource(sourceName)
+  );
+  const adaptiveReason = blockAdaptiveYouTube
+    ? "Higher YouTube qualities like 1080p, 1440p, and 4K are disabled on this server because they need extra YouTube download support. Use a direct quality here, or upgrade the server setup first."
+    : serverWarning;
+
+  if (!adaptiveReason) {
     return formats;
   }
 
@@ -291,7 +305,7 @@ function applyServerAvailability(formats, serverWarning) {
       return {
         ...item,
         disabled: true,
-        unavailableReason: serverWarning,
+        unavailableReason: adaptiveReason,
         note: `${item.note} • currently unavailable on this server`
       };
     }
@@ -333,7 +347,11 @@ export async function inspectMedia(sourceUrl) {
     const info = JSON.parse(stdout);
     const baseFormats = normalizeFormats(info);
     const serverWarning = normalizeWarningText(stderr);
-    const formats = applyServerAvailability(baseFormats, serverWarning);
+    const formats = applyServerAvailability(baseFormats, {
+      serverWarning,
+      sourceUrl,
+      sourceName: info.extractor_key || info.extractor || info.webpage_url_domain || ""
+    });
     const title = sanitizeFilename(info.title || "Untitled media", "Untitled media");
 
     return {
@@ -425,7 +443,7 @@ async function locateCompletedFile(directoryPath) {
   return files[0];
 }
 
-export async function prepareDownloadFile({ sourceUrl, selector, mode, ext }) {
+export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, downloadId }) {
   const outputDir = await createTempOutputDir();
   const outputTemplate = path.join(outputDir, "%(title)s.%(ext)s");
   const args = buildDownloadArgs({
@@ -436,17 +454,38 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext }) {
     outputTemplate
   });
 
+  if (downloadId) {
+    activeDownloads.set(downloadId, { status: "downloading", progress: 0 });
+  }
+
   const child = spawn(YT_DLP_BIN, args, {
-    stdio: ["ignore", "ignore", "pipe"]
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+
+  child.stdout.on("data", (chunk) => {
+    const text = chunk.toString();
+    const match = text.match(/\[download\]\s+(\d+(?:\.\d+)?)%/);
+    if (match && downloadId) {
+      const progress = parseFloat(match[1]);
+      activeDownloads.set(downloadId, { status: "downloading", progress });
+    }
   });
 
   const stderrChunks = [];
   child.stderr.on("data", (chunk) => {
+    const text = chunk.toString();
     stderrChunks.push(Buffer.from(chunk));
+
+    if (downloadId && (text.includes("[Merger]") || text.includes("Merging formats") || text.includes("ffmpeg"))) {
+      activeDownloads.set(downloadId, { status: "merging", progress: 99 });
+    }
   });
 
   const exitCode = await new Promise((resolve, reject) => {
     child.once("error", (error) => {
+      if (downloadId) {
+        activeDownloads.set(downloadId, { status: "failed", error: error.message || "Failed" });
+      }
       if (error.code === "ENOENT") {
         reject(createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503));
         return;
@@ -459,9 +498,19 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext }) {
   });
 
   if (exitCode !== 0) {
+    if (downloadId) {
+      activeDownloads.set(downloadId, { status: "failed", error: "Process exited with non-zero code" });
+    }
     const stderr = Buffer.concat(stderrChunks).toString("utf8").trim();
     await rm(outputDir, { recursive: true, force: true }).catch(() => null);
     throw buildDownloadError(stderr);
+  }
+
+  if (downloadId) {
+    activeDownloads.set(downloadId, { status: "completed", progress: 100 });
+    setTimeout(() => {
+      activeDownloads.delete(downloadId);
+    }, 15000);
   }
 
   const filePath = await locateCompletedFile(outputDir);

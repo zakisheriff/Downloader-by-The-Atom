@@ -32,6 +32,25 @@ export default function LinkInspector() {
   const [media, setMedia] = useState(null);
   const [error, setError] = useState("");
 
+  const visibleVideoGroups = (media?.formatGroups?.video || [])
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((format) => !format.disabled)
+    }))
+    .filter((group) => group.items.length > 0);
+
+  const visibleAudioGroups = (media?.formatGroups?.audio || [])
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((format) => !format.disabled)
+    }))
+    .filter((group) => group.items.length > 0);
+
+  const visibleFormatsCount = [
+    ...visibleVideoGroups.flatMap((group) => group.items),
+    ...visibleAudioGroups.flatMap((group) => group.items)
+  ].length;
+
   const inspectLink = async (sourceUrl) => {
     setLoading(true);
     setError("");
@@ -152,9 +171,9 @@ export default function LinkInspector() {
                   <span>Uploader</span>
                   <strong>{media.uploader || "Unknown"}</strong>
                 </div>
-              <div>
+                <div>
                   <span>Formats</span>
-                  <strong>{media.formats.length} options</strong>
+                  <strong>{visibleFormatsCount} options</strong>
                 </div>
               </div>
             </div>
@@ -168,14 +187,14 @@ export default function LinkInspector() {
               </GlassCard>
             ) : null}
 
-            {media.formatGroups?.video?.length ? (
+            {visibleVideoGroups.length ? (
               <div className={styles.groupSection}>
                 <div className={styles.sectionHeading}>
                   <h3>Video</h3>
                 </div>
 
                 <div className={styles.groupStack}>
-                  {media.formatGroups.video.map((group) => (
+                  {visibleVideoGroups.map((group) => (
                     <GlassCard key={`video-${group.container}`} className={styles.groupCard}>
                       <div className={styles.groupHeader}>
                         <strong>{group.container}</strong>
@@ -198,14 +217,14 @@ export default function LinkInspector() {
               </div>
             ) : null}
 
-            {media.formatGroups?.audio?.length ? (
+            {visibleAudioGroups.length ? (
               <div className={styles.groupSection}>
                 <div className={styles.sectionHeading}>
                   <h3>Audio</h3>
                 </div>
 
                 <div className={styles.groupStack}>
-                  {media.formatGroups.audio.map((group) => (
+                  {visibleAudioGroups.map((group) => (
                     <GlassCard key={`audio-${group.container}`} className={styles.groupCard}>
                       <div className={styles.groupHeader}>
                         <strong>{group.container}</strong>

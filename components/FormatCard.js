@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowDownToLine, LoaderCircle, Music4, PlaySquare } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -8,9 +8,20 @@ import styles from "@/components/FormatCard.module.css";
 
 export default function FormatCard({ format, sourceUrl, mediaTitle }) {
   const [downloading, setDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadStatus, setDownloadStatus] = useState(null);
+  const pollIntervalRef = useRef(null);
   const { showToast } = useToast();
   const Icon = format.type === "audio" ? Music4 : PlaySquare;
   const isBlocked = Boolean(format.disabled);
+
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleDownload = async () => {
     if (isBlocked) {
@@ -22,17 +33,23 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
       return;
     }
 
-    const params = new URLSearchParams({
-      url: sourceUrl,
-      format: format.selector,
-      mode: format.mode,
-      ext: format.ext
-    });
-
     setDownloading(true);
+    setDownloadProgress(0);
+    setDownloadStatus("Starting...");
+
+    const downloadId = Math.random().toString(36).substring(2, 10);
+    let pollingStarted = false;
 
     try {
-      const response = await fetch(`/api/media/download?${params.toString()}`, {
+      const validationParams = new URLSearchParams({
+        url: sourceUrl,
+        format: format.selector,
+        mode: format.mode,
+        ext: format.ext,
+        validate: "true"
+      });
+
+      const response = await fetch(`/api/media/download?${validationParams.toString()}`, {
         cache: "no-store"
       });
 
@@ -41,23 +58,81 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         throw new Error(message || "The file could not be prepared.");
       }
 
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = `${mediaTitle}.${format.ext}`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(objectUrl);
+      showToast({
+        title: "Preparing download",
+        description: "Your file is being prepared on the server and will download natively in your browser shortly.",
+        variant: "info"
+      });
+
+      const downloadParams = new URLSearchParams({
+        url: sourceUrl,
+        format: format.selector,
+        mode: format.mode,
+        ext: format.ext,
+        id: downloadId
+      });
+
+      pollingStarted = true;
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/media/status?id=${downloadId}`, { cache: "no-store" });
+          if (!res.ok) return;
+          const data = await res.json();
+
+          if (data.status === "downloading") {
+            const p = Math.round(data.progress || 0);
+            setDownloadProgress(p);
+            setDownloadStatus(`Downloading... ${p}%`);
+          } else if (data.status === "merging") {
+            setDownloadProgress(99);
+            setDownloadStatus("Merging formats...");
+          } else if (data.status === "completed") {
+            setDownloadProgress(100);
+            setDownloadStatus("Completed!");
+            setTimeout(() => {
+              setDownloading(false);
+              setDownloadStatus(null);
+              setDownloadProgress(0);
+            }, 1000);
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+          } else if (data.status === "failed") {
+            setDownloading(false);
+            setDownloadStatus(null);
+            setDownloadProgress(0);
+            showToast({
+              title: "Download failed",
+              description: data.error || "The download task failed on the server.",
+              variant: "warning"
+            });
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = null;
+            }
+          }
+        } catch (e) {
+          // Keep polling, ignore temporary fetch/server hiccups
+        }
+      }, 800);
+
+      window.location.href = `/api/media/download?${downloadParams.toString()}`;
     } catch (error) {
       showToast({
         title: "Download failed",
         description: error.message || "The file could not be prepared.",
         variant: "warning"
       });
-    } finally {
-      setDownloading(false);
+      if (!pollingStarted) {
+        setDownloading(false);
+        setDownloadStatus(null);
+        setDownloadProgress(0);
+      }
     }
   };
 
@@ -80,9 +155,18 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         {isBlocked ? <span>Unavailable</span> : null}
       </div>
 
-      <button onClick={handleDownload} className={styles.button} disabled={downloading || isBlocked}>
+      <button
+        onClick={handleDownload}
+        className={styles.button}
+        disabled={downloading || isBlocked}
+        style={{
+          background: downloading && downloadProgress > 0
+            ? `linear-gradient(to right, rgba(255, 255, 255, 0.16) ${downloadProgress}%, transparent ${downloadProgress}%), linear-gradient(180deg, #111111, #050505)`
+            : undefined
+        }}
+      >
         {downloading ? <LoaderCircle size={16} className={styles.spin} /> : <ArrowDownToLine size={16} />}
-        {downloading ? "Preparing..." : isBlocked ? "Unavailable" : "Download"}
+        {downloading ? (downloadStatus || "Preparing...") : isBlocked ? "Unavailable" : "Download"}
       </button>
     </GlassCard>
   );
