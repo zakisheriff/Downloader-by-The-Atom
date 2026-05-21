@@ -33,7 +33,14 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
       return;
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 
+      (typeof window !== "undefined" && 
+       (window.location.hostname === "localhost" || 
+        window.location.hostname === "127.0.0.1" || 
+        window.location.hostname === "[::1]" || 
+        window.location.hostname.startsWith("192.168.")) 
+       ? "" 
+       : "https://zakisheriff-downloader-backend.hf.space");
 
     // 1. Direct streaming flow (starts browser download instantly)
     if (format.mode === "direct") {

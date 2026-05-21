@@ -56,7 +56,14 @@ export default function LinkInspector() {
     setError("");
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 
+        (typeof window !== "undefined" && 
+         (window.location.hostname === "localhost" || 
+          window.location.hostname === "127.0.0.1" || 
+          window.location.hostname === "[::1]" || 
+          window.location.hostname.startsWith("192.168.")) 
+         ? "" 
+         : "https://zakisheriff-downloader-backend.hf.space");
       const data = await getJson(`${apiBase}/api/media/inspect?url=${encodeURIComponent(sourceUrl)}`);
       setMedia(data.media);
     } catch (requestError) {
