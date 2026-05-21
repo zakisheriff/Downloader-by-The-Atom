@@ -1,3 +1,89 @@
+/* ---- Landing page top nav ---- */
+.topNav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  gap: 16px;
+}
+
+.topNavBrand {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.topNavActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topNavLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 18px;
+  border-radius: 35px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(12, 12, 12, 0.07);
+  backdrop-filter: blur(10px);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.topNavLink:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.88);
+  transform: translateY(-1px);
+}
+
+.topNavCoffee {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 35px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #7a5400;
+  text-decoration: none;
+  background: rgba(255, 215, 80, 0.18);
+  border: 1px solid rgba(255, 185, 0, 0.28);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 24px rgba(255, 180, 0, 0.1);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.topNavCoffee:hover {
+  background: rgba(255, 215, 80, 0.3);
+  color: #5a3c00;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(255, 180, 0, 0.18);
+}
+
+.topNavCoffee svg {
+  color: #f5a623;
+}
+
+/* ---- Hero section ---- */
 .hero {
   position: relative;
   width: 100%;
@@ -6,6 +92,7 @@
   place-items: center;
   padding: 0;
 }
+
 
 .glow {
   position: absolute;
@@ -135,6 +222,32 @@
     padding: 0;
   }
 
+  .topNav {
+    padding: 14px 16px;
+  }
+
+  .topNavBrand {
+    display: none;
+  }
+
+  /* Coffee button: icon-only on mobile */
+  .topNavCoffee span {
+    display: none;
+  }
+
+  .topNavCoffee {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .topNavLink {
+    padding: 9px 14px;
+    font-size: 0.82rem;
+  }
+
   .content {
     width: min(980px, calc(100vw - 20px));
     gap: 20px;
@@ -168,3 +281,4 @@
     padding: 0;
   }
 }
+

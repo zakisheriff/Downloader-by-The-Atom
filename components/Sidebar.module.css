@@ -24,6 +24,43 @@
   overflow: hidden;
 }
 
+
+.footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(12, 12, 12, 0.07);
+}
+
+.coffeeLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 35px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+  background: rgba(255, 215, 80, 0.1);
+  border: 1px solid rgba(255, 185, 0, 0.18);
+  min-height: 52px;
+}
+
+.coffeeLink:hover {
+  background: rgba(255, 215, 80, 0.18);
+  color: #8a6000;
+  border-color: rgba(255, 185, 0, 0.32);
+  transform: translateX(2px);
+}
+
+.coffeeLink svg {
+  flex-shrink: 0;
+  color: #f5a623;
+}
+
 .logoRow {
   display: flex;
   justify-content: space-between;
@@ -75,6 +112,7 @@
 }
 
 .nav {
+  flex: 1;
   display: grid;
   gap: 8px;
   align-content: start;

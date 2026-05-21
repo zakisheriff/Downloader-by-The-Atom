@@ -1,9 +1,13 @@
 export default function robots() {
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/"
-    },
-    sitemap: "https://fetch.theatom.lk/sitemap.xml"
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/api/"]
+      }
+    ],
+    sitemap: "https://downloader.theatom.lk/sitemap.xml",
+    host: "https://downloader.theatom.lk"
   };
 }

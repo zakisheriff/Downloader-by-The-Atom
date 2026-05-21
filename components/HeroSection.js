@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Link2 } from "lucide-react";
 import styles from "@/components/HeroSection.module.css";
@@ -101,6 +102,13 @@ const FacebookIcon = ({ size }) => (
   </svg>
 );
 
+// Coffee icon (inline SVG)
+const CoffeeIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style={{ display: "block", flexShrink: 0 }}>
+    <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/>
+  </svg>
+);
+
 const supportedApps = [
   { label: "YouTube", icon: YouTubeIcon, size: 18 },
   { label: "Instagram", icon: InstagramIcon, size: 18 },
@@ -123,6 +131,24 @@ export default function HeroSection() {
 
   return (
     <section className={styles.hero}>
+      {/* Top nav bar on the landing page */}
+      <nav className={styles.topNav}>
+        <span className={styles.topNavBrand}>Downloader by The Atom</span>
+        <div className={styles.topNavActions}>
+          <Link href="/blog" className={styles.topNavLink}>Blog</Link>
+          <a
+            href="https://buymeacoffee.com/theoneatom"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.topNavCoffee}
+            aria-label="Buy The Atom a coffee"
+          >
+            <CoffeeIcon />
+            <span>Buy me a coffee</span>
+          </a>
+        </div>
+      </nav>
+
       <div className={styles.glow} />
       <div className={styles.content}>
         <h1>Paste the link.</h1>
@@ -133,6 +159,7 @@ export default function HeroSection() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleStart()}
               placeholder="Paste https://youtube.com/... or any supported public link"
             />
           </div>

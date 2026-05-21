@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Download, SlidersHorizontal, X } from "lucide-react";
+import { Download, SlidersHorizontal, BookOpen, X, Coffee } from "lucide-react";
 import styles from "@/components/Sidebar.module.css";
 
 const navigation = [
   { label: "Downloader", href: "/dashboard", icon: Download },
-  { label: "Setup", href: "/settings", icon: SlidersHorizontal },
+  { label: "Blog", href: "/blog", icon: BookOpen },
+  { label: "Setup", href: "/settings", icon: SlidersHorizontal }
 ];
 
 export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
@@ -19,7 +20,7 @@ export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
         <Link href="/" className={styles.logo} onClick={onClose}>
           <div className={styles.logoCopy}>
             <strong>Downloader by The Atom</strong>
-            <small>fetch.theatom.lk</small>
+            <small>downloader.theatom.lk</small>
           </div>
         </Link>
         <button
@@ -50,6 +51,20 @@ export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
           );
         })}
       </nav>
+
+      <div className={styles.footer}>
+        <a
+          href="https://buymeacoffee.com/theoneatom"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.coffeeLink}
+          onClick={onClose}
+          aria-label="Buy The Atom a coffee"
+        >
+          <Coffee size={16} />
+          <span className={styles.linkLabel}>Buy me a coffee</span>
+        </a>
+      </div>
     </div>
   );
 

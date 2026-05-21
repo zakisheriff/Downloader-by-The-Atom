@@ -1,0 +1,246 @@
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 64px 24px 96px;
+  display: grid;
+  gap: 52px;
+}
+
+.header {
+  display: grid;
+  gap: 16px;
+}
+
+.header h1 {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.6rem, 6vw, 4rem);
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+}
+
+.header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.7;
+  max-width: 560px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  display: grid;
+  gap: 12px;
+  padding: 28px;
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(12, 12, 12, 0.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 14px 36px rgba(14, 16, 20, 0.07);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease;
+  align-content: start;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 22px 48px rgba(14, 16, 20, 0.12);
+}
+
+.cardTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 35px;
+  background: rgba(17, 17, 17, 0.06);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  width: fit-content;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.38;
+  letter-spacing: -0.02em;
+}
+
+.cardDesc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+/* ---- Article layout ---- */
+.article {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 24px 96px;
+  display: grid;
+  gap: 40px;
+}
+
+.articleHeader {
+  display: grid;
+  gap: 16px;
+}
+
+.articleTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 35px;
+  background: rgba(17, 17, 17, 0.06);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  width: fit-content;
+}
+
+.articleTitle {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+
+.articleMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.articleBody {
+  display: grid;
+  gap: 28px;
+  line-height: 1.76;
+  font-size: 1.03rem;
+}
+
+.articleBody h2 {
+  margin: 0;
+  font-size: 1.42rem;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+.articleBody h3 {
+  margin: 0;
+  font-size: 1.12rem;
+  letter-spacing: -0.015em;
+}
+
+.articleBody p {
+  margin: 0;
+  color: #2a2c30;
+}
+
+.articleBody ul,
+.articleBody ol {
+  margin: 0;
+  padding-left: 1.4em;
+  display: grid;
+  gap: 8px;
+  color: #2a2c30;
+}
+
+.articleBody strong {
+  color: var(--text);
+}
+
+.ctaBox {
+  display: grid;
+  gap: 16px;
+  padding: 32px;
+  border-radius: var(--radius-xl);
+  background: rgba(17, 17, 17, 0.04);
+  border: 1px solid rgba(12, 12, 12, 0.08);
+  text-align: center;
+}
+
+.ctaBox p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 32px;
+  border-radius: 35px;
+  font-weight: 600;
+  font-size: 1rem;
+  width: fit-content;
+  margin: 0 auto;
+  text-decoration: none;
+  background: var(--button-bg);
+  color: #fff;
+  border: 1px solid var(--button-border);
+  box-shadow:
+    0 20px 48px rgba(16, 16, 20, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ctaButton:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 28px 56px rgba(16, 16, 20, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.backLink:hover {
+  color: var(--text);
+}
+
+@media (max-width: 640px) {
+  .page,
+  .article {
+    padding: 40px 16px 72px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
