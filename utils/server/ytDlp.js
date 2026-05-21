@@ -483,7 +483,7 @@ export async function inspectMedia(sourceUrl) {
     const cookiesArg = await getCookiesArg();
     const { stdout, stderr } = await execFileAsync(
       YT_DLP_BIN,
-      ["--ignore-config", "--geo-bypass", "--verbose", "--no-cache-dir", "--js-runtimes", "node", ...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl],
+      ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-cache-dir", "--js-runtimes", "node", ...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl],
       { maxBuffer: 20 * 1024 * 1024 }
     );
 
