@@ -73,7 +73,8 @@ async function getCookiesArg() {
   if (process.env.YT_DLP_COOKIES_BASE64) {
     if (process.env.YT_DLP_COOKIES_BASE64 !== lastProcessedBase64 || !existsSync(tmpTxtPath)) {
       try {
-        const decoded = Buffer.from(process.env.YT_DLP_COOKIES_BASE64, "base64").toString("utf-8").trim();
+        const cleanBase64 = process.env.YT_DLP_COOKIES_BASE64.replace(/\s/g, "");
+        const decoded = Buffer.from(cleanBase64, "base64").toString("utf-8").trim();
         let netscapeContent = decoded;
         
         const isJson = decoded.startsWith("[") || decoded.startsWith("{");
@@ -85,9 +86,7 @@ async function getCookiesArg() {
         lastProcessedBase64 = process.env.YT_DLP_COOKIES_BASE64;
       } catch (e) {
         console.error("Failed to process YT_DLP_COOKIES_BASE64:", e);
-        if (e.message.includes("encrypted Cookie-Editor backup")) {
-          throw e;
-        }
+        throw new Error(`Failed to process environment cookies: ${e.message}`);
       }
     }
     
