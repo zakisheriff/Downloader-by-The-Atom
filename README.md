@@ -1,3 +1,12 @@
+---
+title: Downloader Backend
+emoji: 📥
+colorFrom: purple
+colorTo: blue
+sdk: docker
+app_port: 7860
+---
+
 # Downloader by The Atom
 
 Downloader by The Atom is a clean Next.js media downloader for public links. Paste a YouTube, Instagram, TikTok, X, or other supported source URL, inspect the available formats, and save the file directly from the browser.
