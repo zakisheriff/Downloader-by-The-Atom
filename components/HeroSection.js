@@ -133,7 +133,6 @@ export default function HeroSection() {
     <section className={styles.hero}>
       {/* Top nav bar on the landing page */}
       <nav className={styles.topNav}>
-        <span className={styles.topNavBrand}>Downloader by The Atom</span>
         <div className={styles.topNavActions}>
           <Link href="/blog" className={styles.topNavLink}>Blog</Link>
           <a
@@ -144,7 +143,7 @@ export default function HeroSection() {
             aria-label="Buy The Atom a coffee"
           >
             <CoffeeIcon />
-            <span>Buy me a coffee</span>
+            <span>Support</span>
           </a>
         </div>
       </nav>

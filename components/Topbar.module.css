@@ -61,58 +61,80 @@
 .navLink {
   display: inline-flex;
   align-items: center;
-  padding: 9px 18px;
+  padding: 10px 20px;
   border-radius: 35px;
   font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--muted);
+  font-weight: 600;
+  color: #ffffff;
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(12, 12, 12, 0.07);
+  background: linear-gradient(180deg, #2a2a2c, #111112);
+  border: 1px solid rgba(12, 12, 12, 0.22);
+  box-shadow:
+    0 16px 40px rgba(16, 16, 20, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
   transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
   white-space: nowrap;
 }
 
 .navLink:hover,
 .navLinkActive {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.88);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow:
+    0 24px 52px rgba(16, 16, 20, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  filter: brightness(1.12);
+}
+
+.navLink:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 8px 18px rgba(16, 16, 20, 0.2),
+    inset 0 3px 10px rgba(0, 0, 0, 0.22);
 }
 
 .coffeeBtn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 18px;
+  padding: 10px 20px;
   border-radius: 35px;
   font-size: 0.88rem;
-  font-weight: 600;
-  color: #7a5400;
+  font-weight: 700;
+  color: #3d2000;
   text-decoration: none;
-  background: rgba(255, 215, 80, 0.18);
-  border: 1px solid rgba(255, 185, 0, 0.28);
-  box-shadow: 0 10px 24px rgba(255, 180, 0, 0.1);
+  background: linear-gradient(180deg, #f5c842, #d4960a);
+  border: 1px solid rgba(160, 100, 0, 0.28);
+  box-shadow:
+    0 16px 40px rgba(200, 130, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
   transition:
-    background 0.2s ease,
-    color 0.2s ease,
     transform 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
   white-space: nowrap;
 }
 
 .coffeeBtn:hover {
-  background: rgba(255, 215, 80, 0.3);
-  color: #5a3c00;
   transform: translateY(-2px);
-  box-shadow: 0 16px 32px rgba(255, 180, 0, 0.18);
+  box-shadow:
+    0 24px 52px rgba(200, 130, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.44);
+  filter: brightness(1.08);
+}
+
+.coffeeBtn:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 8px 18px rgba(200, 130, 0, 0.2),
+    inset 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
 .coffeeBtn svg {
-  color: #f5a623;
+  color: #3d2000;
+  opacity: 0.8;
 }
 
 @media (max-width: 960px) {
