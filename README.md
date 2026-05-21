@@ -1,3 +1,12 @@
+---
+title: Downloader Backend
+emoji: 📥
+colorFrom: purple
+colorTo: blue
+sdk: docker
+app_port: 7860
+---
+
 # <div align="center">Downloader by The Atom</div>
 
 <div align="center">
