@@ -33,6 +33,32 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
       return;
     }
 
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+
+    // 1. Direct streaming flow (starts browser download instantly)
+    if (format.mode === "direct") {
+      setDownloading(true);
+      setDownloadProgress(100);
+      setDownloadStatus("Downloading in browser...");
+
+      setTimeout(() => {
+        setDownloading(false);
+        setDownloadStatus(null);
+        setDownloadProgress(0);
+      }, 3000);
+
+      const downloadParams = new URLSearchParams({
+        url: sourceUrl,
+        format: format.selector,
+        mode: format.mode,
+        ext: format.ext
+      });
+
+      window.location.href = `${apiBase}/api/media/download?${downloadParams.toString()}`;
+      return;
+    }
+
+    // 2. Background preparation flow (for merge/conversion formats)
     setDownloading(true);
     setDownloadProgress(0);
     setDownloadStatus("Starting...");
@@ -41,36 +67,29 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
     let pollingStarted = false;
 
     try {
-      const validationParams = new URLSearchParams({
+      // First trigger the background preparation (which also validates on the server)
+      const prepareParams = new URLSearchParams({
         url: sourceUrl,
         format: format.selector,
         mode: format.mode,
         ext: format.ext,
-        validate: "true"
+        id: downloadId,
+        prepare: "true"
       });
 
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${apiBase}/api/media/download?${validationParams.toString()}`, {
+      const response = await fetch(`${apiBase}/api/media/download?${prepareParams.toString()}`, {
         cache: "no-store"
       });
 
       if (!response.ok) {
-        const message = await response.text().catch(() => "The file could not be prepared.");
-        throw new Error(message || "The file could not be prepared.");
+        const message = await response.text().catch(() => "The download could not be prepared.");
+        throw new Error(message || "The download could not be prepared.");
       }
 
       showToast({
         title: "Preparing download",
-        description: "Your file is being prepared on the server and will download natively in your browser shortly.",
+        description: "Your file is being prepared on the server. You can monitor the progress on the button.",
         variant: "info"
-      });
-
-      const downloadParams = new URLSearchParams({
-        url: sourceUrl,
-        format: format.selector,
-        mode: format.mode,
-        ext: format.ext,
-        id: downloadId
       });
 
       pollingStarted = true;
@@ -80,7 +99,6 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
 
       pollIntervalRef.current = setInterval(async () => {
         try {
-          const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
           const res = await fetch(`${apiBase}/api/media/status?id=${downloadId}`, { cache: "no-store" });
           if (!res.ok) return;
           const data = await res.json();
@@ -95,11 +113,24 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
           } else if (data.status === "completed") {
             setDownloadProgress(100);
             setDownloadStatus("Completed!");
+
+            // Trigger the native browser download instantly since it's fully ready on server
+            const downloadParams = new URLSearchParams({
+              url: sourceUrl,
+              format: format.selector,
+              mode: format.mode,
+              ext: format.ext,
+              id: downloadId,
+              ready: "true"
+            });
+            window.location.href = `${apiBase}/api/media/download?${downloadParams.toString()}`;
+
             setTimeout(() => {
               setDownloading(false);
               setDownloadStatus(null);
               setDownloadProgress(0);
-            }, 1000);
+            }, 1500);
+
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
               pollIntervalRef.current = null;
@@ -123,7 +154,6 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         }
       }, 800);
 
-      window.location.href = `${apiBase}/api/media/download?${downloadParams.toString()}`;
     } catch (error) {
       showToast({
         title: "Download failed",

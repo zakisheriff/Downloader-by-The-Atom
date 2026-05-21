@@ -17,5 +17,12 @@ export async function GET(request) {
     return NextResponse.json({ status: "not_found" });
   }
 
-  return NextResponse.json(info);
+  // Strip filePath and cleanup function to prevent exposing server internals/secrets or causing serialization issues
+  const clientInfo = {
+    status: info.status,
+    progress: info.progress,
+    error: info.error
+  };
+
+  return NextResponse.json(clientInfo);
 }

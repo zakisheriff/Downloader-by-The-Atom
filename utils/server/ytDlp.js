@@ -577,6 +577,45 @@ async function locateCompletedFile(directoryPath) {
   return files[0];
 }
 
+export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
+  const args = ["--no-warnings", "--no-playlist", "-f", selector || "best", "-o", "-", sourceUrl];
+  const cookiesArg = await getCookiesArg();
+  args.unshift(...cookiesArg);
+
+  const child = spawn(YT_DLP_BIN, args, {
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+
+  const stderrChunks = [];
+  child.stderr.on("data", (chunk) => {
+    stderrChunks.push(chunk);
+  });
+
+  return new ReadableStream({
+    start(controller) {
+      child.stdout.on("data", (chunk) => {
+        controller.enqueue(new Uint8Array(chunk));
+      });
+
+      child.stdout.on("end", () => {
+        if (child.exitCode !== null && child.exitCode !== 0) {
+          const stderr = Buffer.concat(stderrChunks).toString().trim();
+          console.error(`yt-dlp stream exited with code ${child.exitCode}: ${stderr}`);
+        }
+        controller.close();
+      });
+
+      child.stdout.on("error", (error) => {
+        controller.error(error);
+        child.kill();
+      });
+    },
+    cancel() {
+      child.kill();
+    }
+  });
+}
+
 export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, downloadId }) {
   const outputDir = await createTempOutputDir();
   const outputTemplate = path.join(outputDir, "%(title)s.%(ext)s");
@@ -643,32 +682,54 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
     throw buildDownloadError(stderr);
   }
 
-  if (downloadId) {
-    activeDownloads.set(downloadId, { status: "completed", progress: 100 });
-    setTimeout(() => {
-      activeDownloads.delete(downloadId);
-    }, 15000);
-  }
-
   const filePath = await locateCompletedFile(outputDir);
+  const cleanup = async () => {
+    await rm(outputDir, { recursive: true, force: true }).catch(() => null);
+  };
+
+  if (downloadId) {
+    activeDownloads.set(downloadId, {
+      status: "completed",
+      progress: 100,
+      filePath,
+      cleanup
+    });
+
+    // Auto-cleanup after 5 minutes if client never fetches it
+    setTimeout(async () => {
+      const entry = activeDownloads.get(downloadId);
+      if (entry && entry.filePath === filePath) {
+        try {
+          await cleanup();
+        } catch (e) {
+          console.error("Auto-cleanup failed:", e);
+        }
+        activeDownloads.delete(downloadId);
+      }
+    }, 5 * 60 * 1000);
+  }
 
   return {
     filePath,
-    cleanup: async () => {
-      await rm(outputDir, { recursive: true, force: true }).catch(() => null);
-    }
+    cleanup
   };
 }
 
-export function getDownloadHeaders({ filename, ext }) {
+export function getDownloadHeaders({ filename, ext, size }) {
   const safeName = sanitizeFilename(filename, "download");
   const finalExt = normalizeExt(ext, "mp4");
 
-  return {
+  const headers = {
     "Cache-Control": "no-store",
     "Content-Type": guessMimeType(finalExt),
     "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(`${safeName}.${finalExt}`)}`
   };
+
+  if (size && size > 0) {
+    headers["Content-Length"] = String(size);
+  }
+
+  return headers;
 }
 
 export function createReadableStreamFromFile(filePath, onFinish) {
