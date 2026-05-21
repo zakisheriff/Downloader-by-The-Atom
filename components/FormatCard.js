@@ -33,39 +33,19 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
       return;
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 
-      (typeof window !== "undefined" && 
-       (window.location.hostname === "localhost" || 
-        window.location.hostname === "127.0.0.1" || 
-        window.location.hostname === "[::1]" || 
-        window.location.hostname.startsWith("192.168.")) 
-       ? "" 
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ||
+      (typeof window !== "undefined" &&
+       (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "[::1]" ||
+        window.location.hostname.startsWith("192.168."))
+       ? ""
        : "https://zakisheriff-downloader-backend.hf.space");
 
-    // 1. Direct streaming flow (starts browser download instantly)
-    if (format.mode === "direct") {
-      setDownloading(true);
-      setDownloadProgress(100);
-      setDownloadStatus("Downloading in browser...");
-
-      setTimeout(() => {
-        setDownloading(false);
-        setDownloadStatus(null);
-        setDownloadProgress(0);
-      }, 3000);
-
-      const downloadParams = new URLSearchParams({
-        url: sourceUrl,
-        format: format.selector,
-        mode: format.mode,
-        ext: format.ext
-      });
-
-      window.location.href = `${apiBase}/api/media/download?${downloadParams.toString()}`;
-      return;
-    }
-
-    // 2. Background preparation flow (for merge/conversion formats)
+    // All formats go through the background prepare → poll → ready flow.
+    // Direct stdout-piping to the browser is unreliable (YouTube throttles,
+    // partial data, broken files). The server-side temp-file approach is the
+    // only method that consistently produces a complete, valid file.
     setDownloading(true);
     setDownloadProgress(0);
     setDownloadStatus("Starting...");
@@ -74,7 +54,6 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
     let pollingStarted = false;
 
     try {
-      // First trigger the background preparation (which also validates on the server)
       const prepareParams = new URLSearchParams({
         url: sourceUrl,
         format: format.selector,
@@ -121,7 +100,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
             setDownloadProgress(100);
             setDownloadStatus("Completed!");
 
-            // Trigger the native browser download instantly since it's fully ready on server
+            // Trigger the native browser download — file is fully ready on server
             const downloadParams = new URLSearchParams({
               url: sourceUrl,
               format: format.selector,
