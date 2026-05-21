@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Install system dependencies (Python3, FFmpeg, Curl, build utilities)
 RUN apk add --no-cache python3 ffmpeg curl build-base
