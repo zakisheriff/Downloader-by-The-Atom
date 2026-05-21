@@ -69,30 +69,40 @@ let lastProcessedBase64 = null;
 async function getCookiesArg() {
   const tmpTxtPath = path.join(os.tmpdir(), "fetch-by-the-atom-cookies.txt");
   
+  console.log("getCookiesArg: Checking cookies configuration...");
   // 1. Decode/convert from environment variable if available
   if (process.env.YT_DLP_COOKIES_BASE64) {
+    const rawLen = process.env.YT_DLP_COOKIES_BASE64.length;
+    console.log(`getCookiesArg: YT_DLP_COOKIES_BASE64 env var found. Length: ${rawLen}`);
     if (process.env.YT_DLP_COOKIES_BASE64 !== lastProcessedBase64 || !existsSync(tmpTxtPath)) {
       try {
         const cleanBase64 = process.env.YT_DLP_COOKIES_BASE64.replace(/\s/g, "");
+        console.log(`getCookiesArg: Cleaned base64 length: ${cleanBase64.length}`);
         const decoded = Buffer.from(cleanBase64, "base64").toString("utf-8").trim();
+        console.log(`getCookiesArg: Decoded string length: ${decoded.length}`);
         let netscapeContent = decoded;
         
         const isJson = decoded.startsWith("[") || decoded.startsWith("{");
+        console.log(`getCookiesArg: Decoded content is JSON: ${isJson}`);
         if (isJson) {
           netscapeContent = convertJsonToNetscape(decoded);
+          console.log("getCookiesArg: Successfully converted JSON to Netscape format.");
         }
         
         await writeFile(tmpTxtPath, netscapeContent, "utf-8");
         lastProcessedBase64 = process.env.YT_DLP_COOKIES_BASE64;
       } catch (e) {
-        console.error("Failed to process YT_DLP_COOKIES_BASE64:", e);
+        console.error("getCookiesArg: Failed to process YT_DLP_COOKIES_BASE64:", e);
         throw new Error(`Failed to process environment cookies: ${e.message}`);
       }
     }
     
     if (existsSync(tmpTxtPath)) {
+      console.log("getCookiesArg: Using environment cookies file.");
       return ["--cookies", tmpTxtPath];
     }
+  } else {
+    console.log("getCookiesArg: YT_DLP_COOKIES_BASE64 env var NOT found.");
   }
   
   // 2. Check for local cookie files (JSON preferred, then Netscape txt)
@@ -473,7 +483,7 @@ export async function inspectMedia(sourceUrl) {
     const cookiesArg = await getCookiesArg();
     const { stdout, stderr } = await execFileAsync(
       YT_DLP_BIN,
-      [...cookiesArg, "--dump-single-json", "--no-warnings", "--no-playlist", "--skip-download", sourceUrl],
+      ["--ignore-config", ...cookiesArg, "--dump-single-json", "--no-warnings", "--no-playlist", "--skip-download", sourceUrl],
       { maxBuffer: 20 * 1024 * 1024 }
     );
 
@@ -515,7 +525,7 @@ export async function inspectMedia(sourceUrl) {
 }
 
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate }) {
-  const args = ["--no-warnings", "--no-playlist"];
+  const args = ["--ignore-config", "--no-warnings", "--no-playlist"];
 
   if (mode === "extract-audio") {
     args.push(
@@ -577,7 +587,7 @@ async function locateCompletedFile(directoryPath) {
 }
 
 export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
-  const args = ["--no-warnings", "--no-playlist", "-f", selector || "best", "-o", "-", sourceUrl];
+  const args = ["--ignore-config", "--no-warnings", "--no-playlist", "-f", selector || "best", "-o", "-", sourceUrl];
   const cookiesArg = await getCookiesArg();
   args.unshift(...cookiesArg);
 
