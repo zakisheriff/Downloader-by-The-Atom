@@ -125,6 +125,7 @@ export default function LinkInspector() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleInspect()}
               placeholder="Paste https://..."
             />
           </div>

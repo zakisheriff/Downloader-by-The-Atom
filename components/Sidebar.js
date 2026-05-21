@@ -8,7 +8,7 @@ import styles from "@/components/Sidebar.module.css";
 const navigation = [
   { label: "Downloader", href: "/dashboard", icon: Download },
   { label: "Blog", href: "/blog", icon: BookOpen },
-  { label: "Setup", href: "/settings", icon: SlidersHorizontal }
+
 ];
 
 export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
