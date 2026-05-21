@@ -114,6 +114,7 @@ async function getCookiesArg() {
     console.error("Failed to read local directory for cookies:", e);
   }
   
+  let lastError = null;
   for (const item of localFiles) {
     if (existsSync(item.path)) {
       try {
@@ -133,11 +134,13 @@ async function getCookiesArg() {
         }
       } catch (e) {
         console.error(`Failed to process local cookie file at ${item.path}:`, e.message);
-        if (e.message.includes("encrypted Cookie-Editor backup")) {
-          throw e;
-        }
+        lastError = e;
       }
     }
+  }
+  
+  if (lastError) {
+    throw lastError;
   }
   
   // 3. Fallback to existing tmpTxtPath if neither env nor local files are found/valid
