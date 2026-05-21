@@ -5,7 +5,7 @@ RUN apk add --no-cache python3 ffmpeg curl build-base
 
 # Create a virtual environment for yt-dlp to avoid PEP 668 restrictions and install yt-dlp
 RUN python3 -m venv /usr/local/yt-dlp-venv && \
-    /usr/local/yt-dlp-venv/bin/pip install --no-cache-dir -U yt-dlp && \
+    /usr/local/yt-dlp-venv/bin/pip install --no-cache-dir -U "yt-dlp[default]" && \
     ln -s /usr/local/yt-dlp-venv/bin/yt-dlp /usr/local/bin/yt-dlp
 
 # Set working directory

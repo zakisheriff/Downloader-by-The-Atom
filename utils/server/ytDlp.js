@@ -483,7 +483,7 @@ export async function inspectMedia(sourceUrl) {
     const cookiesArg = await getCookiesArg();
     const { stdout, stderr } = await execFileAsync(
       YT_DLP_BIN,
-      ["--ignore-config", "--geo-bypass", "--verbose", "--no-cache-dir", ...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl],
+      ["--ignore-config", "--geo-bypass", "--verbose", "--no-cache-dir", "--js-runtimes", "node", ...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl],
       { maxBuffer: 20 * 1024 * 1024 }
     );
 
@@ -525,7 +525,7 @@ export async function inspectMedia(sourceUrl) {
 }
 
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate }) {
-  const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-playlist"];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
 
   if (mode === "extract-audio") {
     args.push(
@@ -587,7 +587,7 @@ async function locateCompletedFile(directoryPath) {
 }
 
 export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
-  const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-playlist", "-f", selector || "best", "-o", "-", sourceUrl];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", "-f", selector || "best", "-o", "-", sourceUrl];
   const cookiesArg = await getCookiesArg();
   args.unshift(...cookiesArg);
 
