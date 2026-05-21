@@ -496,7 +496,7 @@ export async function inspectMedia(sourceUrl) {
     }
 
     const stderr = error.stderr?.trim();
-    throw createYtError(stderr || "This link could not be inspected right now.", 400);
+    throw createYtError(stderr || error.message || "This link could not be inspected right now.", 400);
   }
 }
 
