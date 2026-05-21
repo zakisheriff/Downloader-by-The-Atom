@@ -49,7 +49,8 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         validate: "true"
       });
 
-      const response = await fetch(`/api/media/download?${validationParams.toString()}`, {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+      const response = await fetch(`${apiBase}/api/media/download?${validationParams.toString()}`, {
         cache: "no-store"
       });
 
@@ -79,7 +80,8 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
 
       pollIntervalRef.current = setInterval(async () => {
         try {
-          const res = await fetch(`/api/media/status?id=${downloadId}`, { cache: "no-store" });
+          const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+          const res = await fetch(`${apiBase}/api/media/status?id=${downloadId}`, { cache: "no-store" });
           if (!res.ok) return;
           const data = await res.json();
 
@@ -121,7 +123,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         }
       }, 800);
 
-      window.location.href = `/api/media/download?${downloadParams.toString()}`;
+      window.location.href = `${apiBase}/api/media/download?${downloadParams.toString()}`;
     } catch (error) {
       showToast({
         title: "Download failed",

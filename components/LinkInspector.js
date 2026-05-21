@@ -56,7 +56,8 @@ export default function LinkInspector() {
     setError("");
 
     try {
-      const data = await getJson(`/api/media/inspect?url=${encodeURIComponent(sourceUrl)}`);
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+      const data = await getJson(`${apiBase}/api/media/inspect?url=${encodeURIComponent(sourceUrl)}`);
       setMedia(data.media);
     } catch (requestError) {
       setMedia(null);

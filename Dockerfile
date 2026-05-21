@@ -22,7 +22,7 @@ COPY . .
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=7860
 ENV YT_DLP_BIN=/usr/local/bin/yt-dlp
 ENV ALLOW_YOUTUBE_ADAPTIVE=true
 
@@ -30,7 +30,7 @@ ENV ALLOW_YOUTUBE_ADAPTIVE=true
 RUN npm run build
 
 # Expose port
-EXPOSE 3000
+EXPOSE 7860
 
 # Start server
 CMD ["npm", "start"]
