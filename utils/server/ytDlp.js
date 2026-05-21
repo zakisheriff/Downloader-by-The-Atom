@@ -1,8 +1,8 @@
 import os from "node:os";
 import path from "node:path";
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { execFile, spawn } from "node:child_process";
-import { mkdir, readdir, rm } from "node:fs/promises";
+import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
 import {
@@ -17,6 +17,34 @@ const YT_DLP_BIN = process.env.YT_DLP_BIN || "yt-dlp";
 const TMP_ROOT = path.join(os.tmpdir(), "fetch-by-the-atom");
 const ALLOW_YOUTUBE_ADAPTIVE = process.env.ALLOW_YOUTUBE_ADAPTIVE !== "false";
 export const activeDownloads = new Map();
+
+async function getCookiesArg() {
+  const tmpCookiesPath = path.join(os.tmpdir(), "fetch-by-the-atom-cookies.txt");
+  
+  // 1. Check if temporary decoded cookies file exists
+  if (existsSync(tmpCookiesPath)) {
+    return ["--cookies", tmpCookiesPath];
+  }
+  
+  // 2. Decode from environment variable if available
+  if (process.env.YT_DLP_COOKIES_BASE64) {
+    try {
+      const decoded = Buffer.from(process.env.YT_DLP_COOKIES_BASE64, "base64").toString("utf-8");
+      await writeFile(tmpCookiesPath, decoded, "utf-8");
+      return ["--cookies", tmpCookiesPath];
+    } catch (e) {
+      console.error("Failed to decode YT_DLP_COOKIES_BASE64:", e);
+    }
+  }
+  
+  // 3. Check for local cookies.txt file
+  const localCookiesPath = path.join(process.cwd(), "cookies.txt");
+  if (existsSync(localCookiesPath)) {
+    return ["--cookies", localCookiesPath];
+  }
+  
+  return [];
+}
 
 function createYtError(message, statusCode = 500) {
   const error = new Error(message);
@@ -338,9 +366,10 @@ function normalizeWarningText(stderr = "") {
 
 export async function inspectMedia(sourceUrl) {
   try {
+    const cookiesArg = await getCookiesArg();
     const { stdout, stderr } = await execFileAsync(
       YT_DLP_BIN,
-      ["--dump-single-json", "--no-warnings", "--no-playlist", "--skip-download", sourceUrl],
+      [...cookiesArg, "--dump-single-json", "--no-warnings", "--no-playlist", "--skip-download", sourceUrl],
       { maxBuffer: 20 * 1024 * 1024 }
     );
 
@@ -453,6 +482,9 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
     ext,
     outputTemplate
   });
+
+  const cookiesArg = await getCookiesArg();
+  args.unshift(...cookiesArg);
 
   if (downloadId) {
     activeDownloads.set(downloadId, { status: "downloading", progress: 0 });
