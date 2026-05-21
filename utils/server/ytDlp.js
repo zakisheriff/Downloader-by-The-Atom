@@ -278,7 +278,19 @@ function sortByContainerThenQuality(groups = []) {
     }));
 }
 
-function buildVideoGroups(formats = []) {
+function estimateSizeBytes(format, durationSeconds = 0) {
+  // Prefer exact filesize, then approximate filesize
+  if (format.filesize && format.filesize > 0) return format.filesize;
+  if (format.filesize_approx && format.filesize_approx > 0) return format.filesize_approx;
+  // Fall back to bitrate × duration estimation (tbr is in kbps)
+  const tbr = format.tbr || format.vbr || 0;
+  if (tbr > 0 && durationSeconds > 0) {
+    return Math.round((tbr * 1000 / 8) * durationSeconds);
+  }
+  return 0;
+}
+
+function buildVideoGroups(formats = [], durationSeconds = 0) {
   const bestPerVariant = new Map();
 
   for (const format of formats) {
@@ -302,6 +314,7 @@ function buildVideoGroups(formats = []) {
     const note = progressive
       ? [resolution, fps, "ready with audio"].filter(Boolean).join(" • ")
       : [resolution, fps, "server merge required"].filter(Boolean).join(" • ");
+    const sizeBytes = estimateSizeBytes(format, durationSeconds);
     const option = {
       id: `video:${format.format_id}:${mode}`,
       selector: progressive ? format.format_id : `${format.format_id}+bestaudio/best`,
@@ -313,8 +326,8 @@ function buildVideoGroups(formats = []) {
       label: resolution,
       note,
       qualityValue: format.height || 0,
-      sizeBytes: format.filesize || format.filesize_approx || 0,
-      sizeLabel: formatBytes(format.filesize || format.filesize_approx || 0),
+      sizeBytes,
+      sizeLabel: formatBytes(sizeBytes),
       requiresServerSupport: !progressive
     };
 
@@ -332,7 +345,7 @@ function buildVideoGroups(formats = []) {
   return sortByContainerThenQuality([...grouped.values()]);
 }
 
-function buildAudioGroups(formats = []) {
+function buildAudioGroups(formats = [], durationSeconds = 0) {
   const primaryFormats = formats.filter((format) => (
     format?.format_id &&
     format.vcodec === "none" &&
@@ -347,6 +360,7 @@ function buildAudioGroups(formats = []) {
   for (const format of primaryFormats) {
     const container = format.ext.toUpperCase();
     const bitrate = Math.round(format.abr || format.tbr || 0);
+    const sizeBytes = estimateSizeBytes(format, durationSeconds);
     const option = {
       id: `audio:${format.format_id}:direct`,
       selector: format.format_id,
@@ -357,8 +371,8 @@ function buildAudioGroups(formats = []) {
       label: bitrate ? `${bitrate}kbps` : "Audio",
       note: "Original audio track",
       qualityValue: bitrate,
-      sizeBytes: format.filesize || format.filesize_approx || 0,
-      sizeLabel: formatBytes(format.filesize || format.filesize_approx || 0),
+      sizeBytes,
+      sizeLabel: formatBytes(sizeBytes),
       requiresServerSupport: false
     };
 
@@ -399,8 +413,9 @@ function buildAudioGroups(formats = []) {
 }
 
 function normalizeFormats(info) {
-  const video = buildVideoGroups(info.formats || []);
-  const audio = buildAudioGroups(info.formats || []);
+  const durationSeconds = info.duration || 0;
+  const video = buildVideoGroups(info.formats || [], durationSeconds);
+  const audio = buildAudioGroups(info.formats || [], durationSeconds);
   const flat = [...video.flatMap((group) => group.items), ...audio.flatMap((group) => group.items)];
 
   if (!flat.length) {
