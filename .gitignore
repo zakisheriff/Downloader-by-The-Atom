@@ -5,9 +5,9 @@ node_modules
 npm-debug.log*
 
 # Cookie files containing sensitive session info
-cookies.txt
-cookies.json
-cookie.txt
-cookie.json
+*cookies.txt
+*cookies.json
+*cookie.txt
+*cookie.json
 fetch-by-the-atom-cookies.txt
 fetch-by-the-atom-cookies.json

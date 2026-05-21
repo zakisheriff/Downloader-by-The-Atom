@@ -97,14 +97,24 @@ async function getCookiesArg() {
   }
   
   // 2. Check for local cookie files (JSON preferred, then Netscape txt)
-  const localPaths = [
-    { path: path.join(process.cwd(), "cookies.json"), isJson: true },
-    { path: path.join(process.cwd(), "cookie.json"), isJson: true },
-    { path: path.join(process.cwd(), "cookies.txt"), isJson: false },
-    { path: path.join(process.cwd(), "cookie.txt"), isJson: false }
-  ];
+  let localFiles = [];
+  try {
+    const files = await readdir(process.cwd());
+    for (const file of files) {
+      const lower = file.toLowerCase();
+      if (lower.endsWith("cookies.json") || lower.endsWith("cookie.json")) {
+        localFiles.push({ path: path.join(process.cwd(), file), isJson: true, name: file, priority: 1 });
+      } else if (lower.endsWith("cookies.txt") || lower.endsWith("cookie.txt")) {
+        localFiles.push({ path: path.join(process.cwd(), file), isJson: false, name: file, priority: 2 });
+      }
+    }
+    // Sort so JSON files are processed before TXT files
+    localFiles.sort((a, b) => a.priority - b.priority);
+  } catch (e) {
+    console.error("Failed to read local directory for cookies:", e);
+  }
   
-  for (const item of localPaths) {
+  for (const item of localFiles) {
     if (existsSync(item.path)) {
       try {
         const content = await readFile(item.path, "utf-8");
@@ -114,9 +124,11 @@ async function getCookiesArg() {
         if (isJson) {
           const converted = convertJsonToNetscape(trimmed);
           await writeFile(tmpTxtPath, converted, "utf-8");
+          console.log(`Successfully converted and loaded cookies from local file: ${item.name}`);
           return ["--cookies", tmpTxtPath];
         } else {
           await writeFile(tmpTxtPath, content, "utf-8");
+          console.log(`Successfully loaded cookies from local Netscape file: ${item.name}`);
           return ["--cookies", tmpTxtPath];
         }
       } catch (e) {
