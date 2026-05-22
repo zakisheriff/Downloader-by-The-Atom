@@ -165,7 +165,6 @@ export default function HeroSection() {
 
         <div className={styles.inputCard}>
           <div className={styles.inputWrap}>
-            <Link2 size={18} />
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
