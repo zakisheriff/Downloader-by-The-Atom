@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Link2 } from "lucide-react";
+import { ArrowRight, Check, ClipboardCopy, Link2, X } from "lucide-react";
 import styles from "@/components/HeroSection.module.css";
 
 // Official YouTube Brand Icon (Red play shape + white triangle)
@@ -119,22 +119,33 @@ const supportedApps = [
 
 export default function HeroSection() {
   const [input, setInput] = useState("");
+  const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef(null);
   const router = useRouter();
 
   const handleStart = () => {
-    if (!input.trim()) {
-      return;
-    }
-
+    if (!input.trim()) return;
     router.push(`/dashboard?url=${encodeURIComponent(input.trim())}`);
   };
+
+  const handleCopy = async () => {
+    if (!input.trim()) return;
+    try {
+      await navigator.clipboard.writeText(input.trim());
+      setCopied(true);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 1500);
+    } catch { /* ignore */ }
+  };
+
+  const handleClear = () => setInput("");
 
   return (
     <section className={styles.hero}>
       {/* Top nav bar on the landing page */}
       <nav className={styles.topNav}>
         <div className={styles.topNavActions}>
-          <Link href="/blog" className={styles.topNavLink}>Blog</Link>
+          <Link href="/blog" className={styles.topNavLink}>How it works</Link>
           <a
             href="https://buymeacoffee.com/theoneatom"
             target="_blank"
@@ -161,6 +172,26 @@ export default function HeroSection() {
               onKeyDown={(e) => e.key === "Enter" && handleStart()}
               placeholder="Paste https://youtube.com/... or any supported public link"
             />
+            {input && (
+              <>
+                <button
+                  className={styles.iconBtn}
+                  onClick={handleCopy}
+                  title={copied ? "Copied!" : "Copy link"}
+                  aria-label="Copy link"
+                >
+                  {copied ? <Check size={14} /> : <ClipboardCopy size={14} />}
+                </button>
+                <button
+                  className={styles.iconBtn}
+                  onClick={handleClear}
+                  title="Clear"
+                  aria-label="Clear input"
+                >
+                  <X size={14} />
+                </button>
+              </>
+            )}
           </div>
           <button onClick={handleStart}>
             Find media

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Link2, LoaderCircle } from "lucide-react";
+import { Check, ClipboardCopy, Link2, LoaderCircle, X } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import FormatCard from "@/components/FormatCard";
 import GlassCard from "@/components/GlassCard";
@@ -31,6 +31,8 @@ export default function LinkInspector() {
   const [loading, setLoading] = useState(false);
   const [media, setMedia] = useState(null);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef(null);
 
   // Resolve API base once at component level — used for inspect, download, status, and thumbnail proxy
   const apiBase = process.env.NEXT_PUBLIC_API_URL ||
@@ -118,9 +120,27 @@ export default function LinkInspector() {
     inspectLink(input.trim());
   };
 
+  const handleCopy = async () => {
+    if (!input.trim()) return;
+    try {
+      await navigator.clipboard.writeText(input.trim());
+      setCopied(true);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 1500);
+    } catch { /* ignore */ }
+  };
+
+  const handleClear = () => {
+    setInput("");
+    setMedia(null);
+    setError("");
+    router.replace("/dashboard");
+  };
+
   return (
     <div className={styles.page}>
       <GlassCard className={styles.hero}>
+        <p className={styles.inputHeading}>Paste the link.</p>
         <div className={styles.inputCard}>
           <div className={styles.inputWrap}>
             <Link2 size={18} />
@@ -128,8 +148,28 @@ export default function LinkInspector() {
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleInspect()}
-              placeholder="Paste https://..."
+              placeholder="Paste https://youtube.com/... or any supported public link"
             />
+            {input && (
+              <>
+                <button
+                  className={styles.iconBtn}
+                  onClick={handleCopy}
+                  title={copied ? "Copied!" : "Copy link"}
+                  aria-label="Copy link"
+                >
+                  {copied ? <Check size={15} /> : <ClipboardCopy size={15} />}
+                </button>
+                <button
+                  className={styles.iconBtn}
+                  onClick={handleClear}
+                  title="Clear"
+                  aria-label="Clear input"
+                >
+                  <X size={15} />
+                </button>
+              </>
+            )}
           </div>
           <button className={styles.primaryButton} onClick={handleInspect}>
             <span>{loading ? "Inspecting" : "Find media"}</span>

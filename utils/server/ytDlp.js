@@ -328,10 +328,10 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
     );
 
     const note = progressive
-      ? [resolution, fps, "ready with audio"].filter(Boolean).join(" • ")
+      ? [resolution, fps, "Ready with audio"].filter(Boolean).join(" • ")
       : needsRecode
-        ? [resolution, fps, "server merge required"].filter(Boolean).join(" • ")
-        : [resolution, fps, "server merge required"].filter(Boolean).join(" • ");
+        ? [resolution, fps, "Server merge required"].filter(Boolean).join(" • ")
+        : [resolution, fps, "Server merge required"].filter(Boolean).join(" • ");
     const sizeBytes = estimateSizeBytes(format, durationSeconds);
     const option = {
       id: `video:${format.format_id}:${mode}`,
@@ -406,6 +406,15 @@ function buildAudioGroups(formats = [], durationSeconds = 0) {
     grouped.get(container).items.push(option);
   }
 
+  // Estimate MP3 size from the best available audio bitrate × duration
+  const bestAudioBitrate = Math.max(
+    ...primaryFormats.map((f) => f.abr || f.tbr || 0).filter(Boolean),
+    0
+  );
+  const mp3SizeBytes = bestAudioBitrate > 0 && durationSeconds > 0
+    ? Math.round((bestAudioBitrate * 1000 / 8) * durationSeconds)
+    : 0;
+
   const mp3Group = {
     container: "MP3",
     type: "audio",
@@ -421,8 +430,8 @@ function buildAudioGroups(formats = [], durationSeconds = 0) {
         label: "Best available",
         note: "Converted to MP3 on the server",
         qualityValue: 999,
-        sizeBytes: 0,
-        sizeLabel: "Unknown",
+        sizeBytes: mp3SizeBytes,
+        sizeLabel: mp3SizeBytes > 0 ? `~${formatBytes(mp3SizeBytes)}` : "Unknown",
         requiresServerSupport: true
       }
     ]
@@ -522,6 +531,37 @@ export async function inspectMedia(sourceUrl) {
     );
 
     const info = JSON.parse(stdout);
+
+    // For formats that have a direct URL but no filesize or bitrate info (common with
+    // Instagram progressive streams), make parallel HEAD requests to get Content-Length.
+    // Runs in parallel with a 3-second timeout per request so it adds minimal latency.
+    const rawFormats = info.formats || [];
+    const missingSize = rawFormats.filter(
+      (f) => f.url && !f.filesize && !f.filesize_approx && !(f.tbr || f.vbr || f.abr)
+    );
+
+    if (missingSize.length > 0) {
+      await Promise.allSettled(
+        missingSize.map(async (f) => {
+          try {
+            const res = await fetch(f.url, {
+              method: "HEAD",
+              signal: AbortSignal.timeout(3000),
+              headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+              }
+            });
+            const len = parseInt(res.headers.get("content-length") || "0", 10);
+            if (len > 0) {
+              f.filesize = len; // Mutate in place — picked up by estimateSizeBytes
+            }
+          } catch {
+            // Silently ignore — size stays "Unknown" if HEAD fails
+          }
+        })
+      );
+    }
+
     const baseFormats = normalizeFormats(info);
     const serverWarning = normalizeWarningText(stderr);
     const formats = applyServerAvailability(baseFormats, {

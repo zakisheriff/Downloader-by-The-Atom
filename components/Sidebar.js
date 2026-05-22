@@ -7,7 +7,7 @@ import styles from "@/components/Sidebar.module.css";
 
 const navigation = [
   { label: "Downloader", href: "/dashboard", icon: Download },
-  { label: "Blog", href: "/blog", icon: BookOpen },
+  { label: "How it works", href: "/blog", icon: BookOpen },
 
 ];
 

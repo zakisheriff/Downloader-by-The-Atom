@@ -15,7 +15,7 @@ const titles = {
     description: "What this app needs in production to fetch files correctly."
   },
   "/blog": {
-    title: "Blog",
+    title: "How it works",
     description: "Guides on downloading from YouTube, Instagram, TikTok and more."
   }
 };
