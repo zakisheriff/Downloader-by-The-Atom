@@ -127,7 +127,8 @@ async function getCookiesArg(sourceUrl, forceCookies = false) {
           throw new Error("No valid cookie content could be decoded from YT_DLP_COOKIES_BASE64.");
         }
         
-        await writeFile(tmpTxtPath, mergedCookiesContent, "utf-8");
+        const sanitizedContent = mergedCookiesContent.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+        await writeFile(tmpTxtPath, sanitizedContent, "utf-8");
         lastProcessedBase64 = process.env.YT_DLP_COOKIES_BASE64;
         console.log(`getCookiesArg: Successfully processed and merged ${processedCount} cookie chunks from environment variable.`);
       } catch (e) {
@@ -194,7 +195,8 @@ async function getCookiesArg(sourceUrl, forceCookies = false) {
   }
 
   if (loadedCount > 0) {
-    await writeFile(tmpTxtPath, mergedCookiesContent, "utf-8");
+    const sanitizedContent = mergedCookiesContent.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+    await writeFile(tmpTxtPath, sanitizedContent, "utf-8");
     console.log(`Successfully merged and loaded ${loadedCount} cookie files.`);
     return ["--cookies", tmpTxtPath];
   }
