@@ -593,15 +593,18 @@ export async function inspectMedia(sourceUrl) {
   if (isYouTube) {
     const hasCookies = await hasCookiesConfigured();
     if (hasCookies) {
-      // Prioritize cookies if available
-      attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, High Quality" });
-      attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, High Quality" });
+      // Prioritize cookies with player-client (highly reliable and uses session)
+      attempts.push({ useCookies: true, usePlayerClient: true, name: "Forced Cookies, Safe Fallback" });
+      // Attempt 2: Forced Cookies, default clients
+      attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, Default" });
+      // Attempt 3: Anonymous fallback with player-client
+      attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
     } else {
-      attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, High Quality" });
-      attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, High Quality" });
+      // Prioritize anonymous with player-client (fastest reliable bypass without cookies)
+      attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
+      // Attempt 2: Anonymous, default clients (fallback)
+      attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, Default" });
     }
-    // Attempt 3: Safe Fallback (default cookies, player-client)
-    attempts.push({ useCookies: false, usePlayerClient: true, name: "Safe Fallback" });
   } else {
     // Non-YouTube URLs run with default cookies, no player-client
     attempts.push({ useCookies: false, usePlayerClient: false, name: "Default" });
@@ -621,7 +624,7 @@ export async function inspectMedia(sourceUrl) {
 
     console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient})`);
     
-    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-cache-dir", "--js-runtimes", "node"];
+    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node"];
     if (attempt.usePlayerClient) {
       args.push("--extractor-args", "youtube:player-client=web,mweb,android");
     }
