@@ -11,6 +11,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadStatus, setDownloadStatus] = useState(null);
   const pollIntervalRef = useRef(null);
+  const watchdogRef = useRef(null);
   const { showToast } = useToast();
   const Icon = format.type === "audio" ? Music4 : PlaySquare;
   const isBlocked = Boolean(format.disabled);
@@ -19,6 +20,9 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
+      }
+      if (watchdogRef.current) {
+        clearTimeout(watchdogRef.current);
       }
     };
   }, []);
@@ -82,6 +86,25 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
+      if (watchdogRef.current) {
+        clearTimeout(watchdogRef.current);
+      }
+
+      // 90-second watchdog — if the server never reports progress, stop polling and show error
+      watchdogRef.current = setTimeout(() => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+        setDownloading(false);
+        setDownloadStatus(null);
+        setDownloadProgress(0);
+        showToast({
+          title: "Download timed out",
+          description: "The server took too long to prepare this file. Try again or pick a different quality.",
+          variant: "warning"
+        });
+      }, 90_000);
 
       pollIntervalRef.current = setInterval(async () => {
         try {
@@ -99,6 +122,10 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
           } else if (data.status === "completed") {
             setDownloadProgress(100);
             setDownloadStatus("Completed!");
+            if (watchdogRef.current) {
+              clearTimeout(watchdogRef.current);
+              watchdogRef.current = null;
+            }
 
             // Trigger the native browser download — file is fully ready on server
             const downloadParams = new URLSearchParams({
@@ -125,6 +152,10 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
             setDownloading(false);
             setDownloadStatus(null);
             setDownloadProgress(0);
+            if (watchdogRef.current) {
+              clearTimeout(watchdogRef.current);
+              watchdogRef.current = null;
+            }
             showToast({
               title: "Download failed",
               description: data.error || "The download task failed on the server.",

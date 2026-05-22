@@ -317,9 +317,21 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
     const resolution = format.height ? `${format.height}p` : format.format_note || "Video";
     const fps = format.fps ? `${format.fps}fps` : null;
     const mode = progressive ? "direct" : "merge";
+
+    // Detect non-H.264 codecs (VP9, AV1) that won't play on macOS/iOS natively.
+    // These need ffmpeg re-encoding to H.264 so the output file plays everywhere.
+    const vcodecLower = String(format.vcodec || "").toLowerCase();
+    const isH264 = vcodecLower.includes("avc") || vcodecLower.includes("h264");
+    const needsRecode = !progressive && !isH264 && (
+      vcodecLower.includes("vp9") || vcodecLower.includes("vp09") ||
+      vcodecLower.includes("av01") || vcodecLower.includes("av1")
+    );
+
     const note = progressive
       ? [resolution, fps, "ready with audio"].filter(Boolean).join(" • ")
-      : [resolution, fps, "server merge required"].filter(Boolean).join(" • ");
+      : needsRecode
+        ? [resolution, fps, "server merge required"].filter(Boolean).join(" • ")
+        : [resolution, fps, "server merge required"].filter(Boolean).join(" • ");
     const sizeBytes = estimateSizeBytes(format, durationSeconds);
     const option = {
       id: `video:${format.format_id}:${mode}`,
@@ -327,6 +339,7 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
       mode,
       type: "video",
       isAdaptive: !progressive,
+      needsRecode,
       ext: normalizeExt(format.ext, "mp4"),
       container,
       label: resolution,
@@ -545,7 +558,7 @@ export async function inspectMedia(sourceUrl) {
   }
 }
 
-function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate }) {
+function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false }) {
   const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
 
   if (mode === "extract-audio") {
@@ -569,6 +582,16 @@ function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate }) {
 
   if (mode === "merge") {
     args.push("--merge-output-format", normalizeExt(ext, "mp4"));
+
+    if (recode) {
+      // VP9/AV1 codecs don't play on macOS QuickTime or iOS natively.
+      // Re-encode to H.264 using a fast preset so the file works everywhere.
+      // -c:a copy preserves audio quality without re-encoding.
+      args.push(
+        "--postprocessor-args",
+        "Merger+ffmpeg:-c:v libx264 -crf 23 -preset veryfast -c:a copy"
+      );
+    }
   }
 
   args.push("-o", outputTemplate, sourceUrl);
@@ -646,7 +669,7 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
   });
 }
 
-export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, downloadId }) {
+export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, downloadId, recode = false }) {
   const outputDir = await createTempOutputDir();
   const outputTemplate = path.join(outputDir, "%(title)s.%(ext)s");
   const args = buildDownloadArgs({
@@ -654,7 +677,8 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
     selector,
     mode,
     ext,
-    outputTemplate
+    outputTemplate,
+    recode
   });
 
   const cookiesArg = await getCookiesArg();

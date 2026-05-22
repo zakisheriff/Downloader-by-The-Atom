@@ -102,7 +102,8 @@ export async function GET(request) {
         selector: selectedFormat?.selector || selector,
         mode: selectedFormat?.mode || mode,
         ext: selectedFormat?.ext || ext,
-        downloadId
+        downloadId,
+        recode: Boolean(selectedFormat?.needsRecode)
       }).catch((error) => {
         console.error(`Background preparation failed for ${downloadId}:`, error);
       });
@@ -137,7 +138,8 @@ export async function GET(request) {
       selector: selectedFormat?.selector || selector,
       mode: selectedFormat?.mode || mode,
       ext: selectedFormat?.ext || ext,
-      downloadId
+      downloadId,
+      recode: Boolean(selectedFormat?.needsRecode)
     });
     const stream = createReadableStreamFromFile(prepared.filePath, prepared.cleanup);
 
