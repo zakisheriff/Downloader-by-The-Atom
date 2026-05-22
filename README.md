@@ -98,8 +98,21 @@ Downloader by The Atom focuses strictly on the media delivery:
 ✅ **Audio Extraction** — Automatically extracts original audio or converts it to MP3  
 ✅ **Real-Time Progress** — Track backend download and merge percentages in the UI  
 ✅ **Direct Browser Save** — Files are transferred directly to your browser download list  
+✅ **Bulletproof Safeguards** — Concurrency queue, rate limiting, and memory optimizations built-in  
 ✅ **SEO Optimized** — Built-in metadata, manifest, robots.txt, and sitemaps  
 ✅ **Custom Brand Identity** — Custom favicon, apple-touch-icons, and logos  
+
+---
+
+## 🛡️ Bulletproof Free-Tier Safeguards
+
+To prevent Out-Of-Memory (OOM) crashes, CPU locks, and resource abuse on the free Hugging Face container backend, we implemented a custom zero-cost resilience architecture:
+
+- **Centralized Concurrency Queue (`lib/JobQueue.js`)**: Restricts background video downloads and merges to a strict concurrency limit of **3** concurrent tasks. Extra incoming requests are held in a queue, returning their exact position in line via `/api/media/status`.
+- **IP-Based Sliding-Window Rate Limiter (`lib/RateLimiter.js`)**: Restricts clients to a maximum of **5** downloads per hour, checking headers like `x-forwarded-for`/`x-real-ip` with fallback URL parameters for client resolution.
+- **Flat-Memory Web Stream Pipelines (`app/api/media/download/route.js`)**: Streams files to browsers using Node.js `stream.Readable.toWeb` instead of buffering files in memory, respecting backpressure and ensuring memory usage remains flat.
+- **Automated Garbage Collection**: A background scanner inside the job queue running every 10 minutes sweeps the temp storage directories and purges disk files, folders, and in-memory tracker maps older than 30 minutes.
+- **Hard Duration Caps**: Inspect and download API routes automatically block links pointing to media exceeding **30 minutes** (1,800 seconds).
 
 ---
 
