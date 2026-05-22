@@ -740,6 +740,9 @@ function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, rec
     args.push("--extractor-args", "youtube:player-client=web,mweb,android");
   }
 
+  // Optimize download performance by writing directly to final file & skipping unnecessary disk/metadata tasks
+  args.push("--no-part", "--no-mtime", "--no-embed-metadata", "--no-embed-thumbnail");
+
   if (mode === "extract-audio") {
     args.push(
       "-f",
@@ -908,21 +911,47 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
         const match = line.match(/\[download\]\s+(\d+(?:\.\d+)?)%/);
         if (match && downloadId) {
           const percent = parseFloat(match[1]);
+          const current = activeDownloads.get(downloadId);
+
+          let lastPercent = current?.lastPercent || 0;
+          let currentDownloadNum = current?.downloadNum || 1;
+
+          // Heuristic to detect second stream download (e.g. video finished at >80% and audio restarts at <20%)
+          if (percent < 20 && lastPercent > 80) {
+            currentDownloadNum = 2;
+          }
+
           let progress = percent;
           if (mode === "merge") {
             // In merge mode, there are 2 downloads: video (first) and audio (second).
             // We map the first download (video) to 0% - 85%
             // and the second download (audio) to 85% - 98%.
-            if (downloadCount <= 1) {
-              progress = percent * 0.85;
-            } else {
+            if (downloadCount > 1 || currentDownloadNum > 1) {
               progress = 85 + (percent * 0.13);
+              currentDownloadNum = 2; // ensure persist
+            } else {
+              progress = percent * 0.85;
             }
+          } else {
+            // Cap direct downloading progress at 95% to avoid displaying 100%
+            // before the process has exited and the file is actually ready.
+            progress = percent * 0.95;
           }
-          const current = activeDownloads.get(downloadId);
+
+          // Strict caps during downloading phase to prevent showing 100% prematurely
+          const maxDownloadingProgress = mode === "merge" ? 98 : 95;
+          if (progress > maxDownloadingProgress) {
+            progress = maxDownloadingProgress;
+          }
+
           // Only update if progress is moving forward or status changed/reset
           if (!current || current.progress < progress || current.status !== "downloading") {
-            activeDownloads.set(downloadId, { status: "downloading", progress });
+            activeDownloads.set(downloadId, {
+              status: "downloading",
+              progress,
+              lastPercent: percent,
+              downloadNum: currentDownloadNum
+            });
           }
         }
       }

@@ -121,7 +121,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
             resetWatchdog(); // Reset watchdog on active download progress
           } else if (data.status === "merging") {
             setDownloadProgress(99);
-            setDownloadStatus("Merging formats...");
+            setDownloadStatus(format.type === "audio" ? "Extracting audio..." : "Merging formats...");
             resetWatchdog(); // Reset watchdog on active merge progress
           } else if (data.status === "completed") {
             setDownloadProgress(100);
@@ -179,7 +179,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         } catch (e) {
           // Keep polling, ignore temporary fetch/server hiccups
         }
-      }, 800);
+      }, 350);
 
     } catch (error) {
       showToast({
