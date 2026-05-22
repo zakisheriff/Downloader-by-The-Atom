@@ -548,7 +548,7 @@ export async function inspectMedia(sourceUrl) {
     try {
       const result = await execFileAsync(
         YT_DLP_BIN,
-        ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-cache-dir", "--js-runtimes", "node", ...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl],
+        ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-cache-dir", "--js-runtimes", "node", "--extractor-args", "youtube:player-client=web,mweb,android", ...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl],
         { maxBuffer: 20 * 1024 * 1024 }
       );
       stdout = result.stdout;
@@ -556,8 +556,8 @@ export async function inspectMedia(sourceUrl) {
       break;
     } catch (error) {
       const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
-      const errStderr = error.stderr?.trim() || "";
-      const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated");
+      const errStderr = (error.stderr?.trim() || "").toLowerCase();
+      const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated") || errStderr.includes("bot");
       
       if (isYouTube && isAuthError && !forced) {
         console.log("inspectMedia: YouTube inspection failed with auth/age error. Retrying with cookies forced...");
@@ -571,7 +571,7 @@ export async function inspectMedia(sourceUrl) {
       if (error.code === "ENOENT") {
         throw createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503);
       }
-      throw createYtError(errStderr || error.message || "This link could not be inspected right now.", 400);
+      throw createYtError(error.stderr?.trim() || error.message || "This link could not be inspected right now.", 400);
     }
   }
 
@@ -641,7 +641,7 @@ export async function inspectMedia(sourceUrl) {
 }
 
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false }) {
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", "--extractor-args", "youtube:player-client=web,mweb,android"];
 
   if (mode === "extract-audio") {
     args.push(
@@ -713,7 +713,7 @@ async function locateCompletedFile(directoryPath) {
 }
 
 export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", "-f", selector || "best", "-o", "-", sourceUrl];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", "--extractor-args", "youtube:player-client=web,mweb,android", "-f", selector || "best", "-o", "-", sourceUrl];
   const cookiesArg = await getCookiesArg(sourceUrl);
   args.unshift(...cookiesArg);
 
@@ -829,8 +829,8 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
     await runDownload(false);
   } catch (error) {
     const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
-    const errStderr = error.message || "";
-    const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated");
+    const errStderr = (error.message || "").toLowerCase();
+    const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated") || errStderr.includes("bot");
 
     if (isYouTube && isAuthError) {
       console.log("prepareDownloadFile: YouTube download failed with potential auth/age error. Retrying with cookies forced...");
