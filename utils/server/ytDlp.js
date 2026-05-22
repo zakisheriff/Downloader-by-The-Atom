@@ -72,7 +72,13 @@ function convertJsonToNetscape(jsonContent) {
 
 let lastProcessedBase64 = null;
 
-async function getCookiesArg() {
+async function getCookiesArg(sourceUrl, forceCookies = false) {
+  const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
+  if (isYouTube && !forceCookies) {
+    console.log("getCookiesArg: Bypassing cookies for YouTube URL by default");
+    return [];
+  }
+
   const tmpTxtPath = path.join(os.tmpdir(), "fetch-by-the-atom-cookies.txt");
   
   console.log("getCookiesArg: Checking cookies configuration...");
@@ -534,14 +540,42 @@ function normalizeWarningText(stderr = "") {
 }
 
 export async function inspectMedia(sourceUrl) {
-  try {
-    const cookiesArg = await getCookiesArg();
-    const { stdout, stderr } = await execFileAsync(
-      YT_DLP_BIN,
-      ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-cache-dir", "--js-runtimes", "node", ...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl],
-      { maxBuffer: 20 * 1024 * 1024 }
-    );
+  let stdout, stderr;
+  let cookiesArg = await getCookiesArg(sourceUrl);
+  let forced = false;
 
+  while (true) {
+    try {
+      const result = await execFileAsync(
+        YT_DLP_BIN,
+        ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-cache-dir", "--js-runtimes", "node", ...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl],
+        { maxBuffer: 20 * 1024 * 1024 }
+      );
+      stdout = result.stdout;
+      stderr = result.stderr;
+      break;
+    } catch (error) {
+      const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
+      const errStderr = error.stderr?.trim() || "";
+      const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated");
+      
+      if (isYouTube && isAuthError && !forced) {
+        console.log("inspectMedia: YouTube inspection failed with auth/age error. Retrying with cookies forced...");
+        cookiesArg = await getCookiesArg(sourceUrl, true);
+        forced = true;
+        if (cookiesArg.length > 0) {
+          continue;
+        }
+      }
+      
+      if (error.code === "ENOENT") {
+        throw createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503);
+      }
+      throw createYtError(errStderr || error.message || "This link could not be inspected right now.", 400);
+    }
+  }
+
+  try {
     const info = JSON.parse(stdout);
 
     // For formats that have a direct URL but no filesize or bitrate info (common with
@@ -601,12 +635,8 @@ export async function inspectMedia(sourceUrl) {
       serverWarning
     };
   } catch (error) {
-    if (error.code === "ENOENT") {
-      throw createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503);
-    }
-
-    const stderr = error.stderr?.trim();
-    throw createYtError(stderr || error.message || "This link could not be inspected right now.", 400);
+    if (error.statusCode) throw error;
+    throw createYtError(error.message || "This link could not be inspected right now.", 400);
   }
 }
 
@@ -684,7 +714,7 @@ async function locateCompletedFile(directoryPath) {
 
 export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
   const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", "-f", selector || "best", "-o", "-", sourceUrl];
-  const cookiesArg = await getCookiesArg();
+  const cookiesArg = await getCookiesArg(sourceUrl);
   args.unshift(...cookiesArg);
 
   const child = spawn(YT_DLP_BIN, args, {
@@ -724,76 +754,111 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, downloadId, recode = false }) {
   const outputDir = await createTempOutputDir();
   const outputTemplate = path.join(outputDir, "%(title)s.%(ext)s");
-  const args = buildDownloadArgs({
-    sourceUrl,
-    selector,
-    mode,
-    ext,
-    outputTemplate,
-    recode
-  });
 
-  const cookiesArg = await getCookiesArg();
-  args.unshift(...cookiesArg);
-
-  if (downloadId) {
-    activeDownloads.set(downloadId, { status: "downloading", progress: 0 });
-  }
-
-  const child = spawn(YT_DLP_BIN, args, {
-    stdio: ["ignore", "pipe", "pipe"]
-  });
-
-  child.stdout.on("data", (chunk) => {
-    // yt-dlp writes progress with \r between updates — split on both \r and \n
-    const text = chunk.toString();
-    const lines = text.split(/[\r\n]+/);
-    for (const line of lines) {
-      const match = line.match(/\[download\]\s+(\d+(?:\.\d+)?)%/);
-      if (match && downloadId) {
-        const progress = parseFloat(match[1]);
-        const current = activeDownloads.get(downloadId);
-        // Only update if progress is moving forward
-        if (!current || current.progress < progress) {
-          activeDownloads.set(downloadId, { status: "downloading", progress });
-        }
-      }
-    }
-  });
-
-  const stderrChunks = [];
-  child.stderr.on("data", (chunk) => {
-    const text = chunk.toString();
-    stderrChunks.push(Buffer.from(chunk));
-
-    if (downloadId && (text.includes("[Merger]") || text.includes("Merging formats") || text.includes("ffmpeg"))) {
-      activeDownloads.set(downloadId, { status: "merging", progress: 99 });
-    }
-  });
-
-  const exitCode = await new Promise((resolve, reject) => {
-    child.once("error", (error) => {
-      if (downloadId) {
-        activeDownloads.set(downloadId, { status: "failed", error: error.message || "Failed" });
-      }
-      if (error.code === "ENOENT") {
-        reject(createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503));
-        return;
-      }
-
-      reject(createYtError(error.message || "The download process could not start.", 500));
+  const runDownload = async (useCookiesForce) => {
+    const args = buildDownloadArgs({
+      sourceUrl,
+      selector,
+      mode,
+      ext,
+      outputTemplate,
+      recode
     });
 
-    child.once("close", resolve);
-  });
+    const cookiesArg = await getCookiesArg(sourceUrl, useCookiesForce);
+    args.unshift(...cookiesArg);
 
-  if (exitCode !== 0) {
     if (downloadId) {
-      activeDownloads.set(downloadId, { status: "failed", error: "Process exited with non-zero code" });
+      activeDownloads.set(downloadId, { status: "downloading", progress: 0 });
     }
-    const stderr = Buffer.concat(stderrChunks).toString("utf8").trim();
-    await rm(outputDir, { recursive: true, force: true }).catch(() => null);
-    throw buildDownloadError(stderr);
+
+    const child = spawn(YT_DLP_BIN, args, {
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+
+    child.stdout.on("data", (chunk) => {
+      // yt-dlp writes progress with \r between updates — split on both \r and \n
+      const text = chunk.toString();
+      const lines = text.split(/[\r\n]+/);
+      for (const line of lines) {
+        const match = line.match(/\[download\]\s+(\d+(?:\.\d+)?)%/);
+        if (match && downloadId) {
+          const progress = parseFloat(match[1]);
+          const current = activeDownloads.get(downloadId);
+          // Only update if progress is moving forward
+          if (!current || current.progress < progress) {
+            activeDownloads.set(downloadId, { status: "downloading", progress });
+          }
+        }
+      }
+    });
+
+    const stderrChunks = [];
+    child.stderr.on("data", (chunk) => {
+      const text = chunk.toString();
+      stderrChunks.push(Buffer.from(chunk));
+
+      if (downloadId && (text.includes("[Merger]") || text.includes("Merging formats") || text.includes("ffmpeg"))) {
+        activeDownloads.set(downloadId, { status: "merging", progress: 99 });
+      }
+    });
+
+    const exitCode = await new Promise((resolve, reject) => {
+      child.once("error", (error) => {
+        if (downloadId) {
+          activeDownloads.set(downloadId, { status: "failed", error: error.message || "Failed" });
+        }
+        if (error.code === "ENOENT") {
+          reject(createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503));
+          return;
+        }
+
+        reject(createYtError(error.message || "The download process could not start.", 500));
+      });
+
+      child.once("close", resolve);
+    });
+
+    if (exitCode !== 0) {
+      const stderr = Buffer.concat(stderrChunks).toString("utf8").trim();
+      throw createYtError(stderr, exitCode);
+    }
+  };
+
+  try {
+    await runDownload(false);
+  } catch (error) {
+    const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
+    const errStderr = error.message || "";
+    const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated");
+
+    if (isYouTube && isAuthError) {
+      console.log("prepareDownloadFile: YouTube download failed with potential auth/age error. Retrying with cookies forced...");
+      const cookiesArgForced = await getCookiesArg(sourceUrl, true);
+      if (cookiesArgForced.length > 0) {
+        try {
+          await runDownload(true);
+        } catch (retryError) {
+          if (downloadId) {
+            activeDownloads.set(downloadId, { status: "failed", error: "Process exited with non-zero code" });
+          }
+          await rm(outputDir, { recursive: true, force: true }).catch(() => null);
+          throw buildDownloadError(retryError.message);
+        }
+      } else {
+        if (downloadId) {
+          activeDownloads.set(downloadId, { status: "failed", error: "Process exited with non-zero code" });
+        }
+        await rm(outputDir, { recursive: true, force: true }).catch(() => null);
+        throw buildDownloadError(errStderr);
+      }
+    } else {
+      if (downloadId) {
+        activeDownloads.set(downloadId, { status: "failed", error: "Process exited with non-zero code" });
+      }
+      await rm(outputDir, { recursive: true, force: true }).catch(() => null);
+      throw buildDownloadError(errStderr);
+    }
   }
 
   const filePath = await locateCompletedFile(outputDir);
