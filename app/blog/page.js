@@ -62,7 +62,6 @@ export default function BlogIndex() {
   return (
     <main className={styles.page}>
       <div className={styles.header}>
-        <span className="eyebrow">Blog</span>
         <h1>Guides & Tips</h1>
         <p>How to download videos from YouTube, Instagram, TikTok, and more — step‑by‑step.</p>
       </div>
