@@ -2,7 +2,7 @@ import Link from "next/link";
 import styles from "@/app/blog/blog.module.css";
 
 export const metadata = {
-  title: "Blog — Video Downloader Tips & Guides",
+  title: "How it works — Video Downloader Tips & Guides",
   description: "Free guides on how to download YouTube videos, Instagram Reels, TikTok clips, and more. Tips, tricks, and step-by-step tutorials from Downloader by The Atom.",
   alternates: { canonical: "/blog" }
 };
