@@ -624,14 +624,17 @@ export async function inspectMedia(sourceUrl) {
 
     console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient})`);
     
-    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node"];
+    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node", "--socket-timeout", "10"];
     if (attempt.usePlayerClient) {
       args.push("--extractor-args", "youtube:player-client=web,mweb,android");
     }
     args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
 
     try {
-      const result = await execFileAsync(YT_DLP_BIN, args, { maxBuffer: 20 * 1024 * 1024 });
+      const result = await execFileAsync(YT_DLP_BIN, args, { 
+        maxBuffer: 20 * 1024 * 1024,
+        timeout: 12000 // 12 seconds hard execution timeout
+      });
       stdout = result.stdout;
       stderr = result.stderr;
 

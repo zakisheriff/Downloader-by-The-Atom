@@ -2,6 +2,9 @@
   "name": "fetch-by-the-atom",
   "version": "1.0.0",
   "private": true,
+  "imports": {
+    "@/*": "./*"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
