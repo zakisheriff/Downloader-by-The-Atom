@@ -114,7 +114,11 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
           if (!res.ok) return;
           const data = await res.json();
 
-          if (data.status === "downloading") {
+          if (data.status === "queued") {
+            setDownloadProgress(0);
+            setDownloadStatus(`Waiting in line (#${data.position || 1})`);
+            resetWatchdog(); // Reset watchdog while waiting in queue
+          } else if (data.status === "downloading") {
             const p = Math.round(data.progress || 0);
             setDownloadProgress(p);
             setDownloadStatus(`Downloading... ${p}%`);

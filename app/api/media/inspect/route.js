@@ -17,6 +17,15 @@ export async function GET(request) {
 
   try {
     const media = await inspectMedia(normalizeSourceUrl(sourceUrl));
+    
+    // Hard-block any media longer than 30 minutes (1800 seconds)
+    if (media.durationSeconds > 1800) {
+      return NextResponse.json(
+        { error: "Media exceeds maximum duration of 30 minutes for the free tier." },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json({ media });
   } catch (error) {
     return NextResponse.json(

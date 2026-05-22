@@ -1,14 +1,16 @@
 import path from "node:path";
 import { stat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { Readable } from "node:stream";
 import {
-  createReadableStreamFromFile,
   getDownloadHeaders,
   inspectMedia,
   prepareDownloadFile,
-  streamDownloadDirect,
-  activeDownloads
+  streamDownloadDirect
 } from "@/utils/server/ytDlp";
 import { isValidSourceUrl, normalizeSourceUrl } from "@/utils/helpers";
+import { jobManager } from "@/lib/JobQueue";
+import { rateLimiter } from "@/lib/RateLimiter";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,13 +25,20 @@ export async function GET(request) {
   const readyOnly = request.nextUrl.searchParams.get("ready") === "true";
   const downloadId = request.nextUrl.searchParams.get("id") || "";
 
-  // 1. Handle serving pre-prepared file (Must be at the very top for instant response)
+  // 1. Rate Limiting Check (Only on new download inspect/prepare/stream requests, not when retrieving completed files)
+  if (!readyOnly && !validateOnly) {
+    if (rateLimiter.isRateLimited(request)) {
+      return new Response("Too many downloads. Limit is 5 per hour.", { status: 429 });
+    }
+  }
+
+  // 2. Handle serving pre-prepared file (Must be at the very top for instant response)
   if (readyOnly) {
     if (!downloadId) {
       return new Response("Missing download ID to retrieve file.", { status: 400 });
     }
 
-    const entry = activeDownloads.get(downloadId);
+    const entry = jobManager.states.get(downloadId);
     if (!entry) {
       return new Response("Download task not found or expired.", { status: 410 });
     }
@@ -65,7 +74,7 @@ export async function GET(request) {
       });
     }
 
-    // Do NOT delete the activeDownloads entry immediately.
+    // Do NOT delete the job entry immediately.
     // This protects against connection drops, range requests, and browser retries.
     // Instead, define a robust onFinish cleanup callback.
     const onFinish = async (success) => {
@@ -77,26 +86,46 @@ export async function GET(request) {
         } catch (e) {
           console.error("Cleanup failed:", e);
         }
-        activeDownloads.delete(downloadId);
+        jobManager.states.delete(downloadId);
       } else {
         // Failed or aborted download: wait 60 seconds before cleanup.
         // This gives the browser or download manager time to reconnect or retry.
         console.log(`Download interrupted for session ${downloadId}. Scheduling delayed cleanup in 60s.`);
         setTimeout(async () => {
-          // Check if it hasn't already been cleaned up by another retry/request
-          if (activeDownloads.has(downloadId)) {
+          if (jobManager.states.has(downloadId)) {
             try {
               await entry.cleanup();
             } catch (e) {
               console.error("Delayed cleanup failed:", e);
             }
-            activeDownloads.delete(downloadId);
+            jobManager.states.delete(downloadId);
           }
         }, 60_000);
       }
     };
 
-    const stream = createReadableStreamFromFile(entry.filePath, onFinish);
+    // High-performance streaming using stream.Readable.toWeb for flat memory usage with backpressure
+    const nodeStream = createReadStream(entry.filePath);
+    let cleaned = false;
+    const triggerCleanup = async (success) => {
+      if (cleaned) return;
+      cleaned = true;
+      await onFinish(success);
+    };
+
+    let ended = false;
+    nodeStream.on("end", () => {
+      ended = true;
+    });
+    nodeStream.on("close", () => {
+      triggerCleanup(ended);
+    });
+    nodeStream.on("error", (err) => {
+      console.error("Streaming read error:", err);
+      triggerCleanup(false);
+    });
+
+    const stream = Readable.toWeb(nodeStream);
 
     return new Response(stream, {
       status: 200,
@@ -111,8 +140,15 @@ export async function GET(request) {
   try {
     const normalizedUrl = normalizeSourceUrl(sourceUrl);
     const media = await inspectMedia(normalizedUrl);
-    const selectedFormat = media.formats.find((format) => format.selector === selector && format.mode === mode && format.ext === ext)
-      || media.formats[0];
+    
+    // 3. Duration limit (Hard-block files > 30 minutes)
+    if (media.durationSeconds > 1800) {
+      return new Response("Media exceeds maximum duration of 30 minutes for the free tier.", { status: 400 });
+    }
+
+    const selectedFormat = media.formats.find(
+      (format) => format.selector === selector && format.mode === mode && format.ext === ext
+    ) || media.formats[0];
 
     if (selectedFormat?.disabled) {
       return new Response(
@@ -128,31 +164,39 @@ export async function GET(request) {
       });
     }
 
-    // 2. Handle Background Preparation Trigger
+    // 4. Handle Background Preparation Trigger with Queue
     if (prepareOnly) {
       if (!downloadId) {
         return new Response("Missing download ID for background preparation.", { status: 400 });
       }
 
-      // Start the download asynchronously in the background
-      prepareDownloadFile({
+      // Enqueue the task via the JobManager
+      jobManager.enqueue(downloadId, () => prepareDownloadFile({
         sourceUrl: normalizedUrl,
         selector: selectedFormat?.selector || selector,
         mode: selectedFormat?.mode || mode,
         ext: selectedFormat?.ext || ext,
         downloadId,
         recode: Boolean(selectedFormat?.needsRecode)
-      }).catch((error) => {
-        console.error(`Background preparation failed for ${downloadId}:`, error);
-      });
+      }));
 
-      return new Response(JSON.stringify({ ok: true, status: "preparing" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" }
-      });
+      // Get current job state (could be queued or immediately running)
+      const jobState = jobManager.getJob(downloadId);
+
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          status: jobState?.status || "preparing",
+          position: jobState?.position
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
     }
 
-    // 3. Fallback: Instant stream if direct, otherwise traditional synchronous behavior
+    // 5. Fallback: Instant stream if direct, otherwise traditional synchronous behavior
     if (selectedFormat?.mode === "direct") {
       const stream = await streamDownloadDirect({
         sourceUrl: normalizedUrl,
@@ -179,7 +223,23 @@ export async function GET(request) {
       downloadId,
       recode: Boolean(selectedFormat?.needsRecode)
     });
-    const stream = createReadableStreamFromFile(prepared.filePath, prepared.cleanup);
+
+    // High-performance streaming using stream.Readable.toWeb with backpressure and immediate cleanup
+    const nodeStream = createReadStream(prepared.filePath);
+    let cleaned = false;
+    nodeStream.on("close", async () => {
+      if (cleaned) return;
+      cleaned = true;
+      await prepared.cleanup();
+    });
+    nodeStream.on("error", async (err) => {
+      console.error("Fallback streaming error:", err);
+      if (cleaned) return;
+      cleaned = true;
+      await prepared.cleanup();
+    });
+
+    const stream = Readable.toWeb(nodeStream);
 
     return new Response(stream, {
       status: 200,
