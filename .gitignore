@@ -11,3 +11,8 @@ npm-debug.log*
 *cookie.json
 fetch-by-the-atom-cookies.txt
 fetch-by-the-atom-cookies.json
+
+# Scratch files and OS-generated files
+scratch/
+.DS_Store
+
