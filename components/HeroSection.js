@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, ClipboardCopy, Link2, X } from "lucide-react";
+import { ArrowRight, Check, Copy, Link2, X } from "lucide-react";
 import styles from "@/components/HeroSection.module.css";
 
 // Official YouTube Brand Icon (Red play shape + white triangle)
@@ -180,7 +180,7 @@ export default function HeroSection() {
                   title={copied ? "Copied!" : "Copy link"}
                   aria-label="Copy link"
                 >
-                  {copied ? <Check size={14} /> : <ClipboardCopy size={14} />}
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
                 </button>
                 <button
                   className={styles.iconBtn}

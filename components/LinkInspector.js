@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, ClipboardCopy, Link2, LoaderCircle, X } from "lucide-react";
+import { Check, Copy, Link2, LoaderCircle, X } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import FormatCard from "@/components/FormatCard";
 import GlassCard from "@/components/GlassCard";
@@ -158,7 +158,7 @@ export default function LinkInspector() {
                   title={copied ? "Copied!" : "Copy link"}
                   aria-label="Copy link"
                 >
-                  {copied ? <Check size={15} /> : <ClipboardCopy size={15} />}
+                  {copied ? <Check size={15} /> : <Copy size={15} />}
                 </button>
                 <button
                   className={styles.iconBtn}
