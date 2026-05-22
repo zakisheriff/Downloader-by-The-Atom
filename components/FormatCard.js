@@ -82,29 +82,31 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         variant: "info"
       });
 
+      const resetWatchdog = () => {
+        if (watchdogRef.current) {
+          clearTimeout(watchdogRef.current);
+        }
+        watchdogRef.current = setTimeout(() => {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          setDownloading(false);
+          setDownloadStatus(null);
+          setDownloadProgress(0);
+          showToast({
+            title: "Download timed out",
+            description: "The server took too long to prepare this file. Try again or pick a different quality.",
+            variant: "warning"
+          });
+        }, 90_000);
+      };
+
       pollingStarted = true;
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
-      if (watchdogRef.current) {
-        clearTimeout(watchdogRef.current);
-      }
-
-      // 90-second watchdog — if the server never reports progress, stop polling and show error
-      watchdogRef.current = setTimeout(() => {
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
-        }
-        setDownloading(false);
-        setDownloadStatus(null);
-        setDownloadProgress(0);
-        showToast({
-          title: "Download timed out",
-          description: "The server took too long to prepare this file. Try again or pick a different quality.",
-          variant: "warning"
-        });
-      }, 90_000);
+      resetWatchdog();
 
       pollIntervalRef.current = setInterval(async () => {
         try {
@@ -116,9 +118,11 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
             const p = Math.round(data.progress || 0);
             setDownloadProgress(p);
             setDownloadStatus(`Downloading... ${p}%`);
+            resetWatchdog(); // Reset watchdog on active download progress
           } else if (data.status === "merging") {
             setDownloadProgress(99);
             setDownloadStatus("Merging formats...");
+            resetWatchdog(); // Reset watchdog on active merge progress
           } else if (data.status === "completed") {
             setDownloadProgress(100);
             setDownloadStatus("Completed!");
@@ -138,11 +142,17 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
             });
             window.location.href = `${apiBase}/api/media/download?${downloadParams.toString()}`;
 
+            showToast({
+              title: "Download started",
+              description: "Your browser has begun downloading the prepared media file.",
+              variant: "success"
+            });
+
             setTimeout(() => {
               setDownloading(false);
               setDownloadStatus(null);
               setDownloadProgress(0);
-            }, 1500);
+            }, 5000); // Extended Completed display from 1.5s to 5s
 
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);

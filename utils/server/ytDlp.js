@@ -1084,21 +1084,21 @@ export function createReadableStreamFromFile(filePath, onFinish) {
       nodeStream.on("end", async () => {
         controller.close();
         if (onFinish) {
-          await onFinish();
+          await onFinish(true);
         }
       });
 
       nodeStream.on("error", async (error) => {
         controller.error(error);
         if (onFinish) {
-          await onFinish();
+          await onFinish(false);
         }
       });
     },
     async cancel() {
       nodeStream.destroy();
       if (onFinish) {
-        await onFinish();
+        await onFinish(false);
       }
     }
   });

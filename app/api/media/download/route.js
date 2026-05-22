@@ -42,12 +42,7 @@ export async function GET(request) {
       return new Response("File is not ready yet.", { status: 409 });
     }
 
-    // Remove from activeDownloads immediately to prevent double cleanups or timeouts
-    activeDownloads.delete(downloadId);
-
-    const stream = createReadableStreamFromFile(entry.filePath, entry.cleanup);
     const filename = path.basename(entry.filePath);
-
     let size = 0;
     try {
       const stats = await stat(entry.filePath);
@@ -56,13 +51,56 @@ export async function GET(request) {
       console.error("Failed to stat completed file:", e);
     }
 
+    const headers = getDownloadHeaders({
+      filename: filename.substring(0, filename.lastIndexOf('.')),
+      ext: filename.substring(filename.lastIndexOf('.') + 1),
+      size
+    });
+
+    // Handle HEAD request to return headers immediately without initiating stream or cleanups
+    if (request.method === "HEAD") {
+      return new Response(null, {
+        status: 200,
+        headers
+      });
+    }
+
+    // Do NOT delete the activeDownloads entry immediately.
+    // This protects against connection drops, range requests, and browser retries.
+    // Instead, define a robust onFinish cleanup callback.
+    const onFinish = async (success) => {
+      if (success) {
+        // Successful download: clean up files immediately
+        console.log(`Download succeeded for session ${downloadId}. Cleaning up.`);
+        try {
+          await entry.cleanup();
+        } catch (e) {
+          console.error("Cleanup failed:", e);
+        }
+        activeDownloads.delete(downloadId);
+      } else {
+        // Failed or aborted download: wait 60 seconds before cleanup.
+        // This gives the browser or download manager time to reconnect or retry.
+        console.log(`Download interrupted for session ${downloadId}. Scheduling delayed cleanup in 60s.`);
+        setTimeout(async () => {
+          // Check if it hasn't already been cleaned up by another retry/request
+          if (activeDownloads.has(downloadId)) {
+            try {
+              await entry.cleanup();
+            } catch (e) {
+              console.error("Delayed cleanup failed:", e);
+            }
+            activeDownloads.delete(downloadId);
+          }
+        }, 60_000);
+      }
+    };
+
+    const stream = createReadableStreamFromFile(entry.filePath, onFinish);
+
     return new Response(stream, {
       status: 200,
-      headers: getDownloadHeaders({
-        filename: filename.substring(0, filename.lastIndexOf('.')),
-        ext: filename.substring(filename.lastIndexOf('.') + 1),
-        size
-      })
+      headers
     });
   }
 
