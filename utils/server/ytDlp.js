@@ -213,6 +213,29 @@ async function getCookiesArg(sourceUrl, forceCookies = false) {
   return [];
 }
 
+async function hasCookiesConfigured() {
+  if (process.env.YT_DLP_COOKIES_BASE64) {
+    return true;
+  }
+  try {
+    const files = await readdir(process.cwd());
+    for (const file of files) {
+      const lower = file.toLowerCase();
+      if (
+        lower.endsWith("cookies.json") ||
+        lower.endsWith("cookie.json") ||
+        lower.endsWith("cookies.txt") ||
+        lower.endsWith("cookie.txt")
+      ) {
+        return true;
+      }
+    }
+  } catch (e) {
+    // Ignore error
+  }
+  return false;
+}
+
 function createYtError(message, statusCode = 500) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -574,10 +597,15 @@ export async function inspectMedia(sourceUrl) {
   
   let attempts = [];
   if (isYouTube) {
-    // Attempt 1: Anonymous, High Quality (no cookies, no player-client)
-    attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, High Quality" });
-    // Attempt 2: Forced Cookies, High Quality (forced cookies, no player-client)
-    attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, High Quality" });
+    const hasCookies = await hasCookiesConfigured();
+    if (hasCookies) {
+      // Prioritize cookies if available
+      attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, High Quality" });
+      attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, High Quality" });
+    } else {
+      attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, High Quality" });
+      attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, High Quality" });
+    }
     // Attempt 3: Safe Fallback (default cookies, player-client)
     attempts.push({ useCookies: false, usePlayerClient: true, name: "Safe Fallback" });
   } else {
@@ -788,7 +816,8 @@ async function locateCompletedFile(directoryPath) {
 }
 
 export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
-  const cookiesArg = await getCookiesArg(sourceUrl);
+  const hasCookies = await hasCookiesConfigured();
+  const cookiesArg = await getCookiesArg(sourceUrl, hasCookies);
   const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
   
   // Only use player-client fallback if no cookies are available.
@@ -859,17 +888,46 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
       stdio: ["ignore", "pipe", "pipe"]
     });
 
+    let downloadCount = 0;
+    const seenFiles = new Set();
+
     child.stdout.on("data", (chunk) => {
       // yt-dlp writes progress with \r between updates — split on both \r and \n
       const text = chunk.toString();
       const lines = text.split(/[\r\n]+/);
       for (const line of lines) {
+        if (line.includes("[Merger]") || line.includes("Merging formats") || line.includes("[ExtractAudio]") || line.includes("ffmpeg")) {
+          if (downloadId) {
+            activeDownloads.set(downloadId, { status: "merging", progress: 99 });
+          }
+        }
+
+        const destMatch = line.match(/\[download\]\s+Destination:\s+(.+)$/) || line.match(/\[download\]\s+(.+?)\s+has already been downloaded/);
+        if (destMatch) {
+          const filePath = destMatch[1].trim();
+          if (!seenFiles.has(filePath)) {
+            seenFiles.add(filePath);
+            downloadCount = seenFiles.size;
+          }
+        }
+
         const match = line.match(/\[download\]\s+(\d+(?:\.\d+)?)%/);
         if (match && downloadId) {
-          const progress = parseFloat(match[1]);
+          const percent = parseFloat(match[1]);
+          let progress = percent;
+          if (mode === "merge") {
+            // In merge mode, there are 2 downloads: video (first) and audio (second).
+            // We map the first download (video) to 0% - 85%
+            // and the second download (audio) to 85% - 98%.
+            if (downloadCount <= 1) {
+              progress = percent * 0.85;
+            } else {
+              progress = 85 + (percent * 0.13);
+            }
+          }
           const current = activeDownloads.get(downloadId);
-          // Only update if progress is moving forward
-          if (!current || current.progress < progress) {
+          // Only update if progress is moving forward or status changed/reset
+          if (!current || current.progress < progress || current.status !== "downloading") {
             activeDownloads.set(downloadId, { status: "downloading", progress });
           }
         }
@@ -908,40 +966,57 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
     }
   };
 
+  const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
+  const hasCookies = isYouTube && (await hasCookiesConfigured());
+
   let downloadSucceeded = false;
   let lastDownloadError = null;
 
-  try {
-    // Attempt 1: Anonymous, High Quality (no cookies, no player-client)
-    await runDownload(false, false);
-    downloadSucceeded = true;
-  } catch (error) {
-    const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
-    lastDownloadError = error;
-    
-    if (isYouTube) {
-      console.log("prepareDownloadFile: Anonymous HQ download failed. Checking forced cookies HQ...");
-      const cookiesArgForced = await getCookiesArg(sourceUrl, true);
-      if (cookiesArgForced.length > 0) {
-        try {
-          await runDownload(true, false);
-          downloadSucceeded = true;
-        } catch (retryError) {
-          console.error("prepareDownloadFile: Forced cookies HQ attempt failed:", retryError.message);
-          lastDownloadError = retryError;
+  if (hasCookies) {
+    console.log("prepareDownloadFile: Cookies configured, prioritizing forced cookies HQ download...");
+    try {
+      await runDownload(true, false);
+      downloadSucceeded = true;
+    } catch (error) {
+      console.error("prepareDownloadFile: Prioritized forced cookies HQ attempt failed. Retrying anonymously...", error.message);
+      lastDownloadError = error;
+      try {
+        await runDownload(false, false);
+        downloadSucceeded = true;
+      } catch (retryError) {
+        lastDownloadError = retryError;
+      }
+    }
+  } else {
+    try {
+      await runDownload(false, false);
+      downloadSucceeded = true;
+    } catch (error) {
+      lastDownloadError = error;
+      if (isYouTube) {
+        console.log("prepareDownloadFile: Anonymous HQ download failed. Checking forced cookies HQ...");
+        const cookiesArgForced = await getCookiesArg(sourceUrl, true);
+        if (cookiesArgForced.length > 0) {
+          try {
+            await runDownload(true, false);
+            downloadSucceeded = true;
+          } catch (retryError) {
+            console.error("prepareDownloadFile: Forced cookies HQ attempt failed:", retryError.message);
+            lastDownloadError = retryError;
+          }
         }
       }
-      
-      if (!downloadSucceeded) {
-        console.log("prepareDownloadFile: HQ attempts failed/skipped. Trying Safe Fallback with player-client...");
-        try {
-          await runDownload(false, true);
-          downloadSucceeded = true;
-        } catch (fallbackError) {
-          console.error("prepareDownloadFile: Safe Fallback attempt failed:", fallbackError.message);
-          lastDownloadError = fallbackError;
-        }
-      }
+    }
+  }
+
+  if (isYouTube && !downloadSucceeded) {
+    console.log("prepareDownloadFile: HQ attempts failed/skipped. Trying Safe Fallback with player-client...");
+    try {
+      await runDownload(false, true);
+      downloadSucceeded = true;
+    } catch (fallbackError) {
+      console.error("prepareDownloadFile: Safe Fallback attempt failed:", fallbackError.message);
+      lastDownloadError = fallbackError;
     }
   }
 
