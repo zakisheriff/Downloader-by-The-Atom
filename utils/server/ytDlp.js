@@ -557,7 +557,7 @@ export async function inspectMedia(sourceUrl) {
     } catch (error) {
       const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
       const errStderr = (error.stderr?.trim() || "").toLowerCase();
-      const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated") || errStderr.includes("bot");
+      const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated") || errStderr.includes("bot") || errStderr.includes("bad request") || errStderr.includes("400") || errStderr.includes("403") || errStderr.includes("forbidden") || errStderr.includes("unable to download api page");
       
       if (isYouTube && isAuthError && !forced) {
         console.log("inspectMedia: YouTube inspection failed with auth/age error. Retrying with cookies forced...");
@@ -830,7 +830,7 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
   } catch (error) {
     const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
     const errStderr = (error.message || "").toLowerCase();
-    const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated") || errStderr.includes("bot");
+    const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated") || errStderr.includes("bot") || errStderr.includes("bad request") || errStderr.includes("400") || errStderr.includes("403") || errStderr.includes("forbidden") || errStderr.includes("unable to download api page");
 
     if (isYouTube && isAuthError) {
       console.log("prepareDownloadFile: YouTube download failed with potential auth/age error. Retrying with cookies forced...");
