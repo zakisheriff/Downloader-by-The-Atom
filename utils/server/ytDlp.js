@@ -388,20 +388,14 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
     const fps = format.fps ? `${format.fps}fps` : null;
     const mode = progressive ? "direct" : "merge";
 
-    // Detect non-H.264 codecs (VP9, AV1) that won't play on macOS/iOS natively.
-    // These need ffmpeg re-encoding to H.264 so the output file plays everywhere.
-    const vcodecLower = String(format.vcodec || "").toLowerCase();
-    const isH264 = vcodecLower.includes("avc") || vcodecLower.includes("h264");
-    const needsRecode = !progressive && !isH264 && (
-      vcodecLower.includes("vp9") || vcodecLower.includes("vp09") ||
-      vcodecLower.includes("av01") || vcodecLower.includes("av1")
-    );
+    // We disable CPU-heavy video transcoding (e.g. VP9/AV1 to H.264) on the server.
+    // Transcoding high resolution (1080p, 1440p, 4K) videos on a cloud container
+    // causes high CPU usage, timeouts, and failures. Stream copy is instant and lossless.
+    const needsRecode = false;
 
     const note = progressive
       ? [resolution, fps, "Ready with audio"].filter(Boolean).join(" • ")
-      : needsRecode
-        ? [resolution, fps, "Server merge required"].filter(Boolean).join(" • ")
-        : [resolution, fps, "Server merge required"].filter(Boolean).join(" • ");
+      : [resolution, fps, "Server merge required"].filter(Boolean).join(" • ");
     const sizeBytes = estimateSizeBytes(format, durationSeconds);
     const option = {
       id: `video:${format.format_id}:${mode}`,
