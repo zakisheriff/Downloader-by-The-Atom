@@ -541,38 +541,81 @@ function normalizeWarningText(stderr = "") {
 
 export async function inspectMedia(sourceUrl) {
   let stdout, stderr;
-  let cookiesArg = await getCookiesArg(sourceUrl);
-  let forced = false;
+  const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
+  
+  let attempts = [];
+  if (isYouTube) {
+    // Attempt 1: Anonymous, High Quality (no cookies, no player-client)
+    attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, High Quality" });
+    // Attempt 2: Forced Cookies, High Quality (forced cookies, no player-client)
+    attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, High Quality" });
+    // Attempt 3: Safe Fallback (default cookies, player-client)
+    attempts.push({ useCookies: false, usePlayerClient: true, name: "Safe Fallback" });
+  } else {
+    // Non-YouTube URLs run with default cookies, no player-client
+    attempts.push({ useCookies: false, usePlayerClient: false, name: "Default" });
+  }
 
-  while (true) {
+  let lastError = null;
+
+  for (let i = 0; i < attempts.length; i++) {
+    const attempt = attempts[i];
+    
+    // Skip forcing cookies attempt if we don't have cookies available.
+    const cookiesArg = await getCookiesArg(sourceUrl, attempt.useCookies);
+    if (attempt.useCookies && cookiesArg.length === 0) {
+      console.log(`inspectMedia: Skipping attempt '${attempt.name}' because no cookies are configured.`);
+      continue;
+    }
+
+    console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient})`);
+    
+    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-cache-dir", "--js-runtimes", "node"];
+    if (attempt.usePlayerClient) {
+      args.push("--extractor-args", "youtube:player-client=web,mweb,android");
+    }
+    args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
+
     try {
-      const result = await execFileAsync(
-        YT_DLP_BIN,
-        ["--ignore-config", "--geo-bypass", "--no-warnings", "--no-cache-dir", "--js-runtimes", "node", "--extractor-args", "youtube:player-client=web,mweb,android", ...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl],
-        { maxBuffer: 20 * 1024 * 1024 }
-      );
+      const result = await execFileAsync(YT_DLP_BIN, args, { maxBuffer: 20 * 1024 * 1024 });
       stdout = result.stdout;
       stderr = result.stderr;
-      break;
-    } catch (error) {
-      const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
-      const errStderr = (error.stderr?.trim() || "").toLowerCase();
-      const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated") || errStderr.includes("bot") || errStderr.includes("bad request") || errStderr.includes("400") || errStderr.includes("403") || errStderr.includes("forbidden") || errStderr.includes("unable to download api page");
-      
-      if (isYouTube && isAuthError && !forced) {
-        console.log("inspectMedia: YouTube inspection failed with auth/age error. Retrying with cookies forced...");
-        cookiesArg = await getCookiesArg(sourceUrl, true);
-        forced = true;
-        if (cookiesArg.length > 0) {
-          continue;
+
+      // If YouTube and resolved formats are only <= 360p, retry with a better configuration (if available).
+      if (isYouTube && !attempt.useCookies && i < attempts.length - 1) {
+        try {
+          const info = JSON.parse(stdout);
+          const rawFormats = info.formats || [];
+          const hasHighQuality = rawFormats.some(f => f.vcodec !== "none" && (f.height || 0) > 360);
+          
+          if (!hasHighQuality) {
+            console.log(`inspectMedia: Attempt '${attempt.name}' succeeded but returned only low quality (<=360p) formats. Retrying with next attempt...`);
+            continue; // Go to next attempt
+          }
+        } catch (e) {
+          // If JSON parse fails, let it fall through
         }
       }
+
+      // If we got here, we successfully resolved the media with acceptable quality (or have no more options).
+      break;
+    } catch (error) {
+      console.error(`inspectMedia: Attempt '${attempt.name}' failed:`, error.stderr?.trim() || error.message);
+      lastError = error;
       
       if (error.code === "ENOENT") {
         throw createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503);
       }
-      throw createYtError(error.stderr?.trim() || error.message || "This link could not be inspected right now.", 400);
+      
+      // If it's the last attempt, let it exit loop and throw
+      if (i === attempts.length - 1) {
+        break;
+      }
     }
+  }
+
+  if (!stdout) {
+    throw createYtError(lastError?.stderr?.trim() || lastError?.message || "This link could not be inspected right now.", 400);
   }
 
   try {
@@ -640,8 +683,11 @@ export async function inspectMedia(sourceUrl) {
   }
 }
 
-function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false }) {
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", "--extractor-args", "youtube:player-client=web,mweb,android"];
+function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false, usePlayerClient = true }) {
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
+  if (usePlayerClient) {
+    args.push("--extractor-args", "youtube:player-client=web,mweb,android");
+  }
 
   if (mode === "extract-audio") {
     args.push(
@@ -713,8 +759,15 @@ async function locateCompletedFile(directoryPath) {
 }
 
 export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", "--extractor-args", "youtube:player-client=web,mweb,android", "-f", selector || "best", "-o", "-", sourceUrl];
   const cookiesArg = await getCookiesArg(sourceUrl);
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
+  
+  // Only use player-client fallback if no cookies are available.
+  if (cookiesArg.length === 0) {
+    args.push("--extractor-args", "youtube:player-client=web,mweb,android");
+  }
+  
+  args.push("-f", selector || "best", "-o", "-", sourceUrl);
   args.unshift(...cookiesArg);
 
   const child = spawn(YT_DLP_BIN, args, {
@@ -755,14 +808,15 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
   const outputDir = await createTempOutputDir();
   const outputTemplate = path.join(outputDir, "%(title)s.%(ext)s");
 
-  const runDownload = async (useCookiesForce) => {
+  const runDownload = async (useCookiesForce, usePlayerClient = true) => {
     const args = buildDownloadArgs({
       sourceUrl,
       selector,
       mode,
       ext,
       outputTemplate,
-      recode
+      recode,
+      usePlayerClient
     });
 
     const cookiesArg = await getCookiesArg(sourceUrl, useCookiesForce);
@@ -825,40 +879,49 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
     }
   };
 
+  let downloadSucceeded = false;
+  let lastDownloadError = null;
+
   try {
-    await runDownload(false);
+    // Attempt 1: Anonymous, High Quality (no cookies, no player-client)
+    await runDownload(false, false);
+    downloadSucceeded = true;
   } catch (error) {
     const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
-    const errStderr = (error.message || "").toLowerCase();
-    const isAuthError = errStderr.includes("confirm your age") || errStderr.includes("login") || errStderr.includes("sign in") || errStderr.includes("members-only") || errStderr.includes("restricted") || errStderr.includes("age-gated") || errStderr.includes("bot") || errStderr.includes("bad request") || errStderr.includes("400") || errStderr.includes("403") || errStderr.includes("forbidden") || errStderr.includes("unable to download api page");
-
-    if (isYouTube && isAuthError) {
-      console.log("prepareDownloadFile: YouTube download failed with potential auth/age error. Retrying with cookies forced...");
+    lastDownloadError = error;
+    
+    if (isYouTube) {
+      console.log("prepareDownloadFile: Anonymous HQ download failed. Checking forced cookies HQ...");
       const cookiesArgForced = await getCookiesArg(sourceUrl, true);
       if (cookiesArgForced.length > 0) {
         try {
-          await runDownload(true);
+          await runDownload(true, false);
+          downloadSucceeded = true;
         } catch (retryError) {
-          if (downloadId) {
-            activeDownloads.set(downloadId, { status: "failed", error: "Process exited with non-zero code" });
-          }
-          await rm(outputDir, { recursive: true, force: true }).catch(() => null);
-          throw buildDownloadError(retryError.message);
+          console.error("prepareDownloadFile: Forced cookies HQ attempt failed:", retryError.message);
+          lastDownloadError = retryError;
         }
-      } else {
-        if (downloadId) {
-          activeDownloads.set(downloadId, { status: "failed", error: "Process exited with non-zero code" });
+      }
+      
+      if (!downloadSucceeded) {
+        console.log("prepareDownloadFile: HQ attempts failed/skipped. Trying Safe Fallback with player-client...");
+        try {
+          await runDownload(false, true);
+          downloadSucceeded = true;
+        } catch (fallbackError) {
+          console.error("prepareDownloadFile: Safe Fallback attempt failed:", fallbackError.message);
+          lastDownloadError = fallbackError;
         }
-        await rm(outputDir, { recursive: true, force: true }).catch(() => null);
-        throw buildDownloadError(errStderr);
       }
-    } else {
-      if (downloadId) {
-        activeDownloads.set(downloadId, { status: "failed", error: "Process exited with non-zero code" });
-      }
-      await rm(outputDir, { recursive: true, force: true }).catch(() => null);
-      throw buildDownloadError(errStderr);
     }
+  }
+
+  if (!downloadSucceeded) {
+    if (downloadId) {
+      activeDownloads.set(downloadId, { status: "failed", error: "Process exited with non-zero code" });
+    }
+    await rm(outputDir, { recursive: true, force: true }).catch(() => null);
+    throw buildDownloadError(lastDownloadError?.message || "The download could not be completed.");
   }
 
   const filePath = await locateCompletedFile(outputDir);
