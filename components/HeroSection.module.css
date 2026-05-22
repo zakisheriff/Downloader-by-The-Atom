@@ -204,7 +204,7 @@
 }
 
 
-.inputCard button {
+.inputCard > button {
   min-height: 68px;
   min-width: 250px;
   display: inline-flex;
@@ -252,7 +252,7 @@
     grid-template-columns: 1fr;
   }
 
-  .inputCard button {
+  .inputCard > button {
     width: 100%;
   }
 }
@@ -307,7 +307,7 @@
     padding: 0 12px;
   }
 
-  .inputCard button {
+  .inputCard > button {
     min-height: 58px;
     min-width: 0;
   }
