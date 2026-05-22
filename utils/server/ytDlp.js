@@ -593,17 +593,17 @@ export async function inspectMedia(sourceUrl) {
   if (isYouTube) {
     const hasCookies = await hasCookiesConfigured();
     if (hasCookies) {
-      // Prioritize cookies with player-client (highly reliable and uses session)
-      attempts.push({ useCookies: true, usePlayerClient: true, name: "Forced Cookies, Safe Fallback" });
-      // Attempt 2: Forced Cookies, default clients
+      // 1. Forced Cookies, Default (High Quality)
       attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, Default" });
-      // Attempt 3: Anonymous fallback with player-client
+      // 2. Anonymous, Default (High Quality Fallback)
+      attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, Default" });
+      // 3. Anonymous, Safe Fallback (Low Quality, Bot Bypass)
       attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
     } else {
-      // Prioritize anonymous with player-client (fastest reliable bypass without cookies)
-      attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
-      // Attempt 2: Anonymous, default clients (fallback)
+      // 1. Anonymous, Default (High Quality)
       attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, Default" });
+      // 2. Anonymous, Safe Fallback (Low Quality, Bot Bypass)
+      attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
     }
   } else {
     // Non-YouTube URLs run with default cookies, no player-client
@@ -636,7 +636,7 @@ export async function inspectMedia(sourceUrl) {
       stderr = result.stderr;
 
       // If YouTube and resolved formats are only <= 360p, retry with a better configuration (if available).
-      if (isYouTube && !attempt.useCookies && i < attempts.length - 1) {
+      if (isYouTube && i < attempts.length - 1) {
         try {
           const info = JSON.parse(stdout);
           const rawFormats = info.formats || [];
