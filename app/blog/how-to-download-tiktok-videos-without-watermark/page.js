@@ -18,7 +18,7 @@ export const metadata = {
 export default function Post() {
   return (
     <main className={styles.article}>
-      <Link href="/blog" className={styles.backLink}>← All guides</Link>
+      <Link href="/blog" className={styles.backLink}>All guides</Link>
 
       <header className={styles.articleHeader}>
         <span className={styles.articleTag}>TikTok</span>
@@ -69,7 +69,7 @@ export default function Post() {
 
         <div className={styles.ctaBox}>
           <p>Paste your TikTok link and download the clean version for free.</p>
-          <Link href="/dashboard" className={styles.ctaButton}>Download TikTok Video →</Link>
+          <Link href="/dashboard" className={styles.ctaButton}>Download TikTok Video</Link>
         </div>
       </div>
     </main>

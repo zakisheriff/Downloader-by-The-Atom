@@ -121,7 +121,14 @@ export default function HeroSection() {
   const [input, setInput] = useState("");
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef(null);
+  const inputRef = useRef(null);
   const router = useRouter();
+
+  const handleContainerClick = (e) => {
+    if (e.target.tagName !== "BUTTON" && !e.target.closest("button")) {
+      inputRef.current?.focus();
+    }
+  };
 
   const handleStart = () => {
     if (!input.trim()) return;
@@ -163,9 +170,10 @@ export default function HeroSection() {
       <div className={styles.content}>
         <h1>Paste the link.</h1>
 
-        <div className={styles.inputCard}>
+        <div className={styles.inputCard} onClick={handleContainerClick}>
           <div className={styles.inputWrap}>
             <input
+              ref={inputRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleStart()}

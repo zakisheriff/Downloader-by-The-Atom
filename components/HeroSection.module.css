@@ -31,29 +31,33 @@
   text-decoration: none;
   background: linear-gradient(180deg, #2a2a2c, #111112);
   border: 1px solid rgba(12, 12, 12, 0.22);
+  transform: translateY(0);
   box-shadow:
-    0 20px 48px rgba(16, 16, 20, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 4px 0 #050506,
+    0 12px 24px rgba(16, 16, 20, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    filter 0.12s ease;
   white-space: nowrap;
 }
 
 .topNavLink:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 28px 56px rgba(16, 16, 20, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    0 6px 0 #050506,
+    0 16px 32px rgba(16, 16, 20, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
   filter: brightness(1.12);
 }
 
 .topNavLink:active {
-  transform: translateY(1px);
+  transform: translateY(3px);
   box-shadow:
-    0 10px 20px rgba(16, 16, 20, 0.2),
-    inset 0 3px 10px rgba(0, 0, 0, 0.22);
+    0 1px 0 #050506,
+    0 6px 12px rgba(16, 16, 20, 0.08),
+    inset 0 2px 4px rgba(0, 0, 0, 0.24);
 }
 
 .topNavCoffee {
@@ -68,29 +72,33 @@
   text-decoration: none;
   background: linear-gradient(180deg, #f5c842, #d4960a);
   border: 1px solid rgba(160, 100, 0, 0.28);
+  transform: translateY(0);
   box-shadow:
-    0 20px 48px rgba(200, 130, 0, 0.28),
+    0 4px 0 #ad7802,
+    0 12px 24px rgba(200, 130, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.38);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    filter 0.12s ease;
   white-space: nowrap;
 }
 
 .topNavCoffee:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 28px 56px rgba(200, 130, 0, 0.36),
+    0 6px 0 #ad7802,
+    0 16px 32px rgba(200, 130, 0, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.44);
   filter: brightness(1.08);
 }
 
 .topNavCoffee:active {
-  transform: translateY(1px);
+  transform: translateY(3px);
   box-shadow:
-    0 10px 20px rgba(200, 130, 0, 0.22),
-    inset 0 3px 10px rgba(0, 0, 0, 0.12);
+    0 1px 0 #ad7802,
+    0 6px 12px rgba(200, 130, 0, 0.12),
+    inset 0 2px 4px rgba(0, 0, 0, 0.16);
 }
 
 .topNavCoffee svg {
@@ -148,12 +156,23 @@
   padding: 14px;
   border-radius: 35px;
   width: min(880px, 100%);
-  background: rgba(255, 255, 255, 0.74);
+  background: rgba(255, 255, 255, 0.76);
   border: 1px solid rgba(12, 12, 12, 0.08);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 28px 56px rgba(14, 16, 20, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 16px 48px rgba(14, 16, 20, 0.08);
   backdrop-filter: blur(18px);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  cursor: text;
+}
+
+.inputCard:focus-within {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(12, 12, 12, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 0 0 3px rgba(12, 12, 12, 0.04),
+    0 16px 48px rgba(14, 16, 20, 0.12);
 }
 
 .inputWrap {
@@ -161,8 +180,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 14px;
-  min-height: 66px;
+  padding: 0 10px;
+  flex: 1;
 }
 
 .inputWrap svg {
@@ -172,10 +191,12 @@
 
 .inputWrap input {
   flex: 1;
-  border: 0;
-  background: transparent;
-  outline: none;
+  border: 0 !important;
+  background: transparent !important;
+  outline: none !important;
   font-size: 1.02rem;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
 .iconBtn {
@@ -186,21 +207,35 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: none;
-  background: rgba(17, 17, 17, 0.07);
+  border: 1px solid rgba(12, 12, 12, 0.08);
+  background: rgba(255, 255, 255, 0.88);
   color: var(--muted);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transform: translateY(0);
+  box-shadow:
+    0 2px 0 rgba(12, 12, 12, 0.12),
+    0 4px 8px rgba(14, 16, 20, 0.04);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease,
+    background-color 0.1s ease,
+    color 0.1s ease;
 }
 
 .iconBtn:hover {
-  background: rgba(17, 17, 17, 0.14);
+  background: #ffffff;
   color: var(--text);
-  transform: scale(1.08);
+  transform: translateY(-1px);
+  box-shadow:
+    0 3px 0 rgba(12, 12, 12, 0.12),
+    0 6px 12px rgba(14, 16, 20, 0.06);
 }
 
 .iconBtn:active {
-  transform: scale(0.94);
+  transform: translateY(2px);
+  box-shadow:
+    0 0 0 rgba(12, 12, 12, 0.12),
+    inset 0 1.5px 3px rgba(0, 0, 0, 0.16);
 }
 
 
@@ -228,33 +263,37 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.58);
-  border: 1px solid rgba(12, 12, 12, 0.07);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(12, 12, 12, 0.08);
   color: var(--text);
+  transform: translateY(0);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.84),
-    0 10px 22px rgba(14, 16, 20, 0.06);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    0 3px 0 rgba(12, 12, 12, 0.12),
+    0 6px 12px rgba(14, 16, 20, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition:
+    transform 0.15s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.15s cubic-bezier(0.3, 0.8, 0.4, 1),
+    background-color 0.15s ease;
   cursor: default;
 }
 
 .appBadge:hover {
-  transform: translateY(-3px) scale(1.05);
-  background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(12, 12, 12, 0.12);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(12, 12, 12, 0.14);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.96),
-    0 16px 32px rgba(14, 16, 20, 0.12);
+    0 5px 0 rgba(12, 12, 12, 0.12),
+    0 8px 18px rgba(14, 16, 20, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-@media (max-width: 960px) {
-  .inputCard {
-    grid-template-columns: 1fr;
-  }
-
-  .inputCard > button {
-    width: 100%;
-  }
+.appBadge:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 rgba(12, 12, 12, 0.12),
+    0 2px 4px rgba(14, 16, 20, 0.04),
+    inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 @media (max-width: 640px) {
@@ -299,17 +338,48 @@
   }
 
   .inputCard {
-    padding: 10px;
+    grid-template-columns: 1fr;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    gap: 12px;
+  }
+
+  .inputCard:focus-within {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
   }
 
   .inputWrap {
+    width: 100%;
     min-height: 58px;
-    padding: 0 12px;
+    padding: 0 20px;
+    background: rgba(255, 255, 255, 0.76);
+    border: 1px solid rgba(12, 12, 12, 0.08);
+    border-radius: 35px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.94),
+      0 8px 24px rgba(14, 16, 20, 0.06);
+    backdrop-filter: blur(18px);
+  }
+
+  .inputCard:focus-within .inputWrap {
+    background: rgba(255, 255, 255, 0.88);
+    border-color: rgba(12, 12, 12, 0.2);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.96),
+      0 0 0 3px rgba(12, 12, 12, 0.04),
+      0 8px 24px rgba(14, 16, 20, 0.08);
   }
 
   .inputCard > button {
+    width: 100%;
     min-height: 58px;
     min-width: 0;
+    margin: 0;
   }
 
   .appRow {

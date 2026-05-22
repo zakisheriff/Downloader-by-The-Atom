@@ -33,6 +33,13 @@ export default function LinkInspector() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const handleContainerClick = (e) => {
+    if (e.target.tagName !== "BUTTON" && !e.target.closest("button")) {
+      inputRef.current?.focus();
+    }
+  };
 
   // Resolve API base once at component level — used for inspect, download, status, and thumbnail proxy
   const apiBase = process.env.NEXT_PUBLIC_API_URL ||
@@ -141,10 +148,11 @@ export default function LinkInspector() {
     <div className={styles.page}>
       <GlassCard className={styles.hero}>
         <p className={styles.inputHeading}>Paste the link.</p>
-        <div className={styles.inputCard}>
+        <div className={styles.inputCard} onClick={handleContainerClick}>
           <div className={styles.inputWrap}>
             <Link2 size={18} />
             <input
+              ref={inputRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleInspect()}

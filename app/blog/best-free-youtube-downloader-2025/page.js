@@ -18,7 +18,7 @@ export const metadata = {
 export default function Post() {
   return (
     <main className={styles.article}>
-      <Link href="/blog" className={styles.backLink}>← All guides</Link>
+      <Link href="/blog" className={styles.backLink}>All guides</Link>
 
       <header className={styles.articleHeader}>
         <span className={styles.articleTag}>YouTube</span>
@@ -92,7 +92,7 @@ export default function Post() {
 
         <div className={styles.ctaBox}>
           <p>Try the best free YouTube downloader for yourself — no signup, no ads.</p>
-          <Link href="/dashboard" className={styles.ctaButton}>Download YouTube Videos Free →</Link>
+          <Link href="/dashboard" className={styles.ctaButton}>Download YouTube Videos Free</Link>
         </div>
       </div>
     </main>

@@ -55,7 +55,7 @@ export default function Topbar({ onMenuOpen }) {
 
       <nav className={styles.actions}>
         <Link href="/blog" className={`${styles.navLink} ${pathname?.startsWith("/blog") ? styles.navLinkActive : ""}`}>
-          Blog
+          How it works
         </Link>
         <a
           href="https://buymeacoffee.com/theoneatom"

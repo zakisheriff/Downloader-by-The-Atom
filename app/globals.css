@@ -66,37 +66,67 @@ select {
 button {
   cursor: pointer;
   border-radius: 35px;
-  border: 1px solid var(--button-border);
+  border: 1px solid rgba(12, 12, 12, 0.2);
   background: var(--button-bg);
   color: #ffffff;
+  transform: translateY(0);
   box-shadow:
-    0 20px 48px rgba(16, 16, 20, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 4px 0 #050506,
+    0 12px 28px rgba(14, 16, 20, 0.12),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.14);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    filter 0.12s ease;
 }
 
 button:hover,
 button:focus-visible {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow:
-    0 26px 56px rgba(16, 16, 20, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    0 6px 0 #050506,
+    0 16px 36px rgba(14, 16, 20, 0.16),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.18);
 }
 
 button:active {
-  transform: translateY(1px);
+  transform: translateY(3px);
   box-shadow:
-    0 12px 24px rgba(16, 16, 20, 0.16),
-    inset 0 3px 12px rgba(0, 0, 0, 0.18);
+    0 1px 0 #050506,
+    0 6px 12px rgba(14, 16, 20, 0.08),
+    inset 0 2px 4px rgba(0, 0, 0, 0.24);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: translateY(3px) !important;
+  box-shadow:
+    0 1px 0 rgba(12, 12, 12, 0.1),
+    inset 0 1px 2px rgba(0, 0, 0, 0.12) !important;
 }
 
 input,
 textarea,
 select {
   color: var(--text);
+  border: 1px solid rgba(12, 12, 12, 0.08);
+  border-radius: 35px;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(12, 12, 12, 0.22);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.06),
+    0 0 0 3px rgba(12, 12, 12, 0.04),
+    0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 img {
@@ -115,15 +145,18 @@ img {
 
 ::-webkit-scrollbar-track {
   background: rgba(12, 12, 12, 0.04);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(12, 12, 12, 0.18);
+  background: rgba(12, 12, 12, 0.2);
+  border: 2px solid transparent;
   border-radius: 35px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(12, 12, 12, 0.26);
+  background: rgba(12, 12, 12, 0.3);
 }
 
 .toastViewport {
@@ -146,14 +179,15 @@ img {
   align-items: center;
   gap: 8px;
   padding: 9px 15px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(12, 12, 12, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(12, 12, 12, 0.09);
   border-radius: 35px;
   color: var(--muted);
   font-size: 0.88rem;
   box-shadow:
-    0 16px 34px rgba(13, 15, 20, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1.5px 0 rgba(0, 0, 0, 0.02),
+    0 12px 28px rgba(13, 15, 20, 0.05);
   backdrop-filter: blur(14px);
 }
 
@@ -163,14 +197,15 @@ img {
   gap: 10px;
   padding: 7px 12px;
   border-radius: 35px;
-  background: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.8);
   color: #1a1c1f;
-  border: 1px solid rgba(12, 12, 12, 0.08);
+  border: 1px solid rgba(12, 12, 12, 0.09);
   font-size: 0.8rem;
   letter-spacing: 0.02em;
   box-shadow:
-    0 14px 30px rgba(13, 15, 20, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1.5px 0 rgba(0, 0, 0, 0.02),
+    0 10px 24px rgba(13, 15, 20, 0.04);
   backdrop-filter: blur(16px);
 }
 

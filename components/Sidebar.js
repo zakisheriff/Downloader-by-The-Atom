@@ -50,9 +50,6 @@ export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
             </Link>
           );
         })}
-      </nav>
-
-      <div className={styles.footer}>
         <a
           href="https://buymeacoffee.com/theoneatom"
           target="_blank"
@@ -64,7 +61,9 @@ export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
           <Coffee size={16} />
           <span className={styles.linkLabel}>Buy me a coffee</span>
         </a>
-      </div>
+      </nav>
+
+      
     </div>
   );
 

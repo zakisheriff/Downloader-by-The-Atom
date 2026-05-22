@@ -37,23 +37,42 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: 35px;
-  color: var(--muted);
+  color: #3d2000;
   font-size: 0.92rem;
+  font-weight: 600;
   text-decoration: none;
+  background: linear-gradient(180deg, #fdf6e2, #f3deb2);
+  border: 1px solid rgba(212, 150, 10, 0.3);
+  transform: translateY(0);
+  box-shadow:
+    0 3px 0 #ad7802,
+    0 10px 20px rgba(200, 130, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
-  background: rgba(255, 215, 80, 0.1);
-  border: 1px solid rgba(255, 185, 0, 0.18);
+    background-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1);
   min-height: 52px;
 }
 
 .coffeeLink:hover {
-  background: rgba(255, 215, 80, 0.18);
+  background: linear-gradient(180deg, #fef8eb, #f7e6c4);
   color: #8a6000;
-  border-color: rgba(255, 185, 0, 0.32);
-  transform: translateX(2px);
+  border-color: rgba(212, 150, 10, 0.45);
+  transform: translateY(-2px);
+  box-shadow:
+    0 5px 0 #ad7802,
+    0 12px 24px rgba(200, 130, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.coffeeLink:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 #ad7802,
+    0 4px 8px rgba(200, 130, 0, 0.04),
+    inset 0 1.5px 3px rgba(0, 0, 0, 0.08);
 }
 
 .coffeeLink svg {
@@ -83,15 +102,13 @@
   place-items: center;
   font-weight: 700;
   flex-shrink: 0;
-}
-
-.logoMark {
-  background: linear-gradient(
-    135deg,
-    rgba(16, 163, 127, 1),
-    rgba(98, 255, 214, 0.44)
-  );
+  background: linear-gradient(135deg, rgba(16, 163, 127, 1), rgba(98, 255, 214, 0.44));
   color: #04100d;
+  border: 1px solid rgba(16, 163, 127, 0.3);
+  box-shadow:
+    0 3px 0 rgba(12, 100, 80, 0.4),
+    0 8px 16px rgba(16, 163, 127, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .logoCopy {
@@ -114,7 +131,7 @@
 .nav {
   flex: 1;
   display: grid;
-  gap: 8px;
+  gap: 15px;
   align-content: start;
 }
 
@@ -125,18 +142,20 @@
   padding: 14px 16px;
   border-radius: 35px;
   color: var(--muted);
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
   overflow: hidden;
   min-height: 52px;
-  background: rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(12, 12, 12, 0.06);
+  transform: translateY(0);
   box-shadow:
-    0 14px 28px rgba(14, 16, 20, 0.06),
+    0 3px 0 rgba(12, 12, 12, 0.06),
+    0 6px 12px rgba(14, 16, 20, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1);
 }
 
 .link svg {
@@ -144,19 +163,25 @@
   display: block;
 }
 
-.link:hover,
-.active {
+.link:hover {
   color: var(--text);
-  background: rgba(17, 17, 17, 0.05);
-  transform: translateX(2px);
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
   box-shadow:
-    0 16px 32px rgba(14, 16, 20, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 5px 0 rgba(12, 12, 12, 0.08),
+    0 8px 16px rgba(14, 16, 20, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-.active {
-  border: 1px solid rgba(12, 12, 12, 0.08);
-  background: rgba(17, 17, 17, 0.08);
+.active,
+.active:hover {
+  color: var(--text);
+  background: rgba(12, 12, 12, 0.05);
+  border-color: rgba(12, 12, 12, 0.12);
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .linkLabel {
@@ -175,9 +200,9 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 0;
+  border: 1px solid rgba(12, 12, 12, 0.08);
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.88);
   color: var(--muted);
   flex-shrink: 0;
   display: inline-flex;
@@ -186,12 +211,24 @@
   padding: 0;
   line-height: 0;
   text-align: center;
+  transform: translateY(0);
+  box-shadow:
+    0 2px 0 rgba(12, 12, 12, 0.12),
+    0 6px 12px rgba(0, 0, 0, 0.04);
   transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14);
+    transform 0.1s ease,
+    background 0.1s ease,
+    color 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+.collapseButton:hover {
+  background: #ffffff;
+  color: var(--text);
+  transform: translateY(-1px);
+  box-shadow:
+    0 3px 0 rgba(12, 12, 12, 0.12),
+    0 8px 16px rgba(0, 0, 0, 0.06);
 }
 
 .collapseButton svg {
@@ -199,13 +236,6 @@
   width: 18px;
   height: 18px;
   margin: 0;
-}
-
-.collapseButton:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--text);
-  transform: translateY(-1px);
-  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.22);
 }
 
 .collapsed .collapseButton svg {

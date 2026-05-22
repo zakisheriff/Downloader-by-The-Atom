@@ -79,7 +79,7 @@ export default function Post() {
 
         <div className={styles.ctaBox}>
           <p>Paste your Instagram Reel link and download it in seconds.</p>
-          <Link href="/dashboard" className={styles.ctaButton}>Download Reels Free →</Link>
+          <Link href="/dashboard" className={styles.ctaButton}>Download Reels Free</Link>
         </div>
       </div>
     </main>

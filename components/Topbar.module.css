@@ -17,15 +17,19 @@
   height: 44px;
   border-radius: 35px;
   border: 1px solid rgba(12, 12, 12, 0.08);
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--text);
   flex-shrink: 0;
-  box-shadow: 0 16px 40px rgba(14, 16, 20, 0.08);
+  transform: translateY(0);
+  box-shadow:
+    0 3px 0 rgba(12, 12, 12, 0.12),
+    0 10px 20px rgba(14, 16, 20, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease;
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    background-color 0.12s ease,
+    color 0.12s ease;
 }
 
 .mobileMenuButton {
@@ -69,13 +73,15 @@
   text-decoration: none;
   background: linear-gradient(180deg, #2a2a2c, #111112);
   border: 1px solid rgba(12, 12, 12, 0.22);
+  transform: translateY(0);
   box-shadow:
-    0 16px 40px rgba(16, 16, 20, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    0 4px 0 #050506,
+    0 12px 24px rgba(16, 16, 20, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    filter 0.12s ease;
   white-space: nowrap;
 }
 
@@ -83,16 +89,18 @@
 .navLinkActive {
   transform: translateY(-2px);
   box-shadow:
-    0 24px 52px rgba(16, 16, 20, 0.26),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    0 6px 0 #050506,
+    0 16px 32px rgba(16, 16, 20, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
   filter: brightness(1.12);
 }
 
 .navLink:active {
-  transform: translateY(1px);
+  transform: translateY(3px);
   box-shadow:
-    0 8px 18px rgba(16, 16, 20, 0.2),
-    inset 0 3px 10px rgba(0, 0, 0, 0.22);
+    0 1px 0 #050506,
+    0 6px 12px rgba(16, 16, 20, 0.08),
+    inset 0 2px 4px rgba(0, 0, 0, 0.24);
 }
 
 .coffeeBtn {
@@ -107,29 +115,33 @@
   text-decoration: none;
   background: linear-gradient(180deg, #f5c842, #d4960a);
   border: 1px solid rgba(160, 100, 0, 0.28);
+  transform: translateY(0);
   box-shadow:
-    0 16px 40px rgba(200, 130, 0, 0.26),
+    0 4px 0 #ad7802,
+    0 12px 24px rgba(200, 130, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.38);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    filter 0.12s ease;
   white-space: nowrap;
 }
 
 .coffeeBtn:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 24px 52px rgba(200, 130, 0, 0.34),
+    0 6px 0 #ad7802,
+    0 16px 32px rgba(200, 130, 0, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.44);
   filter: brightness(1.08);
 }
 
 .coffeeBtn:active {
-  transform: translateY(1px);
+  transform: translateY(3px);
   box-shadow:
-    0 8px 18px rgba(200, 130, 0, 0.2),
-    inset 0 3px 10px rgba(0, 0, 0, 0.1);
+    0 1px 0 #ad7802,
+    0 6px 12px rgba(200, 130, 0, 0.12),
+    inset 0 2px 4px rgba(0, 0, 0, 0.16);
 }
 
 .coffeeBtn svg {
@@ -174,7 +186,19 @@
 
 .mobileMenuButton:hover,
 .desktopToggle:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 22px 44px rgba(14, 16, 20, 0.12);
-  background: rgba(255, 255, 255, 0.92);
+  transform: translateY(-2px);
+  box-shadow:
+    0 5px 0 rgba(12, 12, 12, 0.12),
+    0 12px 24px rgba(14, 16, 20, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  background: #ffffff;
+}
+
+.mobileMenuButton:active,
+.desktopToggle:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 rgba(12, 12, 12, 0.12),
+    0 4px 8px rgba(14, 16, 20, 0.04),
+    inset 0 1.5px 3px rgba(0, 0, 0, 0.08);
 }

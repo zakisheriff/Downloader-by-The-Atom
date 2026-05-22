@@ -18,7 +18,7 @@ export const metadata = {
 export default function Post() {
   return (
     <main className={styles.article}>
-      <Link href="/blog" className={styles.backLink}>← All guides</Link>
+      <Link href="/blog" className={styles.backLink}>All guides</Link>
 
       <header className={styles.articleHeader}>
         <span className={styles.articleTag}>YouTube</span>
@@ -101,7 +101,7 @@ export default function Post() {
 
         <div className={styles.ctaBox}>
           <p>Download a 4K YouTube video right now — real 2160p with audio merged automatically.</p>
-          <Link href="/dashboard" className={styles.ctaButton}>Download 4K Video Free →</Link>
+          <Link href="/dashboard" className={styles.ctaButton}>Download 4K Video Free</Link>
         </div>
       </div>
     </main>

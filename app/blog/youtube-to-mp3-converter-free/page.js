@@ -18,7 +18,7 @@ export const metadata = {
 export default function Post() {
   return (
     <main className={styles.article}>
-      <Link href="/blog" className={styles.backLink}>← All guides</Link>
+      <Link href="/blog" className={styles.backLink}>All guides</Link>
 
       <header className={styles.articleHeader}>
         <span className={styles.articleTag}>Audio</span>
@@ -79,7 +79,7 @@ export default function Post() {
 
         <div className={styles.ctaBox}>
           <p>Convert your first YouTube video to MP3 right now — free and instant.</p>
-          <Link href="/dashboard" className={styles.ctaButton}>Convert YouTube to MP3 →</Link>
+          <Link href="/dashboard" className={styles.ctaButton}>Convert YouTube to MP3</Link>
         </div>
       </div>
     </main>
