@@ -16,7 +16,13 @@ const execFileAsync = promisify(execFile);
 const YT_DLP_BIN = process.env.YT_DLP_BIN || "yt-dlp";
 const TMP_ROOT = path.join(os.tmpdir(), "fetch-by-the-atom");
 const ALLOW_YOUTUBE_ADAPTIVE = process.env.ALLOW_YOUTUBE_ADAPTIVE !== "false";
-export const activeDownloads = new Map();
+
+// Persist across Next.js HMR hot-module reloads in dev.
+// In production this is just a regular Map on the module.
+if (!global.__activeDownloads) {
+  global.__activeDownloads = new Map();
+}
+export const activeDownloads = global.__activeDownloads;
 
 function convertJsonToNetscape(jsonContent) {
   let cookies;
@@ -663,11 +669,19 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
   });
 
   child.stdout.on("data", (chunk) => {
+    // yt-dlp writes progress with \r between updates — split on both \r and \n
     const text = chunk.toString();
-    const match = text.match(/\[download\]\s+(\d+(?:\.\d+)?)%/);
-    if (match && downloadId) {
-      const progress = parseFloat(match[1]);
-      activeDownloads.set(downloadId, { status: "downloading", progress });
+    const lines = text.split(/[\r\n]+/);
+    for (const line of lines) {
+      const match = line.match(/\[download\]\s+(\d+(?:\.\d+)?)%/);
+      if (match && downloadId) {
+        const progress = parseFloat(match[1]);
+        const current = activeDownloads.get(downloadId);
+        // Only update if progress is moving forward
+        if (!current || current.progress < progress) {
+          activeDownloads.set(downloadId, { status: "downloading", progress });
+        }
+      }
     }
   });
 
