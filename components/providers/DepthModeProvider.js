@@ -2,31 +2,13 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "fetch-by-the-atom.depth-mode";
 const DepthModeContext = createContext(null);
 
 export function DepthModeProvider({ children }) {
-  const [mode, setMode] = useState("3d");
-
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved === "flat" || saved === "3d") {
-        setMode(saved);
-      }
-    } catch {
-      setMode("3d");
-    }
-  }, []);
+  const [mode, setMode] = useState("flat");
 
   useEffect(() => {
     document.documentElement.dataset.depthMode = mode;
-
-    try {
-      window.localStorage.setItem(STORAGE_KEY, mode);
-    } catch {
-      // Ignore storage failures in private browsing contexts.
-    }
   }, [mode]);
 
   const toggleMode = () => {

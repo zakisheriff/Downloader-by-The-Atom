@@ -31,6 +31,12 @@ export default function LoadingArcade({
   const memoryTiles = useMemo(() => Array.from({ length: 9 }, (_, index) => index), []);
 
   useEffect(() => {
+    if (activeGame !== "memory") {
+      setMemoryLocked(true);
+      setMemoryRevealIndex(-1);
+      return;
+    }
+
     const timeouts = [];
     let cursor = 220;
 
@@ -56,7 +62,7 @@ export default function LoadingArcade({
     return () => {
       timeouts.forEach((timeout) => window.clearTimeout(timeout));
     };
-  }, [memorySequence]);
+  }, [memorySequence, activeGame]);
 
   const moveDot = () => {
     setDotPosition({

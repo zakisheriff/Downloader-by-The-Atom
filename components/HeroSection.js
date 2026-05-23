@@ -201,7 +201,7 @@ export default function HeroSection() {
               </>
             )}
           </div>
-          <button onClick={handleStart}>
+          <button onClick={handleStart} style={{ fontWeight: 700 }} disabled={!input.trim()} className={styles.startBtn}>
             Find media
           </button>
         </div>
