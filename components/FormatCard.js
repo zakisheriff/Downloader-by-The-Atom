@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ArrowDownToLine, LoaderCircle, Music4, PlaySquare } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
+import LoadingArcade from "@/components/LoadingArcade";
 import { useToast } from "@/components/providers/ToastProvider";
 import styles from "@/components/FormatCard.module.css";
 
@@ -231,6 +232,16 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         {downloading ? <LoaderCircle size={16} className={styles.spin} /> : <ArrowDownToLine size={16} />}
         {downloading ? (downloadStatus || "Preparing...") : isBlocked ? "Unavailable" : "Download"}
       </button>
+
+      {downloading ? (
+        <div className={styles.arcadeWrap}>
+          <LoadingArcade
+            compact
+            title="Play while it prepares"
+            subtitle="A tiny break while this file gets ready."
+          />
+        </div>
+      ) : null}
     </GlassCard>
   );
 }

@@ -33,30 +33,30 @@
   border: 1px solid rgba(12, 12, 12, 0.22);
   transform: translateY(0);
   box-shadow:
-    0 4px 0 #050506,
-    0 12px 24px rgba(16, 16, 20, 0.12),
+    0 2px 0 #050506,
+    0 10px 20px rgba(16, 16, 20, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
   transition:
-    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
-    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
-    filter 0.12s ease;
+    transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
+    filter 0.16s ease;
   white-space: nowrap;
 }
 
 .topNavLink:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow:
-    0 6px 0 #050506,
-    0 16px 32px rgba(16, 16, 20, 0.16),
+    0 3px 0 #050506,
+    0 14px 24px rgba(16, 16, 20, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  filter: brightness(1.12);
+  filter: brightness(1.04);
 }
 
 .topNavLink:active {
-  transform: translateY(3px);
+  transform: translateY(1px);
   box-shadow:
     0 1px 0 #050506,
-    0 6px 12px rgba(16, 16, 20, 0.08),
+    0 4px 10px rgba(16, 16, 20, 0.06),
     inset 0 2px 4px rgba(0, 0, 0, 0.24);
 }
 
@@ -74,36 +74,50 @@
   border: 1px solid rgba(160, 100, 0, 0.28);
   transform: translateY(0);
   box-shadow:
-    0 4px 0 #ad7802,
-    0 12px 24px rgba(200, 130, 0, 0.18),
+    0 2px 0 #ad7802,
+    0 10px 22px rgba(200, 130, 0, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.38);
   transition:
-    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
-    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
-    filter 0.12s ease;
+    transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
+    filter 0.16s ease;
   white-space: nowrap;
 }
 
 .topNavCoffee:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow:
-    0 6px 0 #ad7802,
-    0 16px 32px rgba(200, 130, 0, 0.24),
+    0 3px 0 #ad7802,
+    0 14px 26px rgba(200, 130, 0, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.44);
-  filter: brightness(1.08);
+  filter: brightness(1.04);
 }
 
 .topNavCoffee:active {
-  transform: translateY(3px);
+  transform: translateY(1px);
   box-shadow:
     0 1px 0 #ad7802,
-    0 6px 12px rgba(200, 130, 0, 0.12),
+    0 4px 10px rgba(200, 130, 0, 0.08),
     inset 0 2px 4px rgba(0, 0, 0, 0.16);
 }
 
 .topNavCoffee svg {
   color: #3d2000;
   opacity: 0.85;
+}
+
+.topNavLink,
+.topNavCoffee,
+.iconBtn,
+.appBadge,
+.inputCard,
+.inputCard > button {
+  transition:
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    filter 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 /* ---- Hero section ---- */
@@ -128,6 +142,11 @@
   pointer-events: none;
 }
 
+:global(html[data-depth-mode="flat"]) .glow {
+  filter: blur(16px);
+  opacity: 0.5;
+}
+
 .content {
   position: relative;
   width: min(980px, calc(100vw - 32px));
@@ -147,6 +166,10 @@
   font-size: clamp(3.4rem, 8.6vw, 6.6rem);
   line-height: 0.9;
   letter-spacing: -0.07em;
+}
+
+.title {
+  min-height: 1.05em;
 }
 
 .inputCard {
@@ -278,18 +301,60 @@
   cursor: default;
 }
 
+:global(html[data-depth-mode="flat"]) .topNavLink,
+:global(html[data-depth-mode="flat"]) .topNavCoffee {
+  box-shadow: 0 8px 20px rgba(16, 16, 20, 0.06);
+}
+
+:global(html[data-depth-mode="flat"]) .topNavLink:hover,
+:global(html[data-depth-mode="flat"]) .topNavCoffee:hover,
+:global(html[data-depth-mode="flat"]) .iconBtn:hover {
+  transform: translateY(-1px);
+}
+
+:global(html[data-depth-mode="flat"]) .inputCard {
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: none;
+  border-color: rgba(12, 12, 12, 0.06);
+}
+
+:global(html[data-depth-mode="flat"]) .inputCard:focus-within {
+  box-shadow: 0 0 0 3px rgba(12, 12, 12, 0.05);
+}
+
+:global(html[data-depth-mode="flat"]) .inputCard > button {
+  background: #111111;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+:global(html[data-depth-mode="flat"]) .inputCard > button:hover {
+  box-shadow: 0 12px 24px rgba(17, 17, 17, 0.1);
+  transform: translateY(-1px);
+}
+
+:global(html[data-depth-mode="flat"]) .inputCard > button:active {
+  box-shadow: none;
+}
+
+:global(html[data-depth-mode="flat"]) .iconBtn,
+:global(html[data-depth-mode="flat"]) .appBadge {
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.78);
+}
+
 .appBadge:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.9);
   border-color: rgba(12, 12, 12, 0.14);
   box-shadow:
-    0 5px 0 rgba(12, 12, 12, 0.12),
-    0 8px 18px rgba(14, 16, 20, 0.08),
+    0 3px 0 rgba(12, 12, 12, 0.1),
+    0 8px 16px rgba(14, 16, 20, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .appBadge:active {
-  transform: translateY(2px);
+  transform: translateY(1px);
   box-shadow:
     0 1px 0 rgba(12, 12, 12, 0.12),
     0 2px 4px rgba(14, 16, 20, 0.04),
@@ -393,3 +458,13 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .topNavLink,
+  .topNavCoffee,
+  .iconBtn,
+  .appBadge,
+  .inputCard,
+  .inputCard > button {
+    transition: none;
+  }
+}

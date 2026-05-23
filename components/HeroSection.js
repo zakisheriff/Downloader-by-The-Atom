@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Copy, Link2, X } from "lucide-react";
+import DepthModeToggle from "@/components/DepthModeToggle";
 import styles from "@/components/HeroSection.module.css";
 
 // Official YouTube Brand Icon (Red play shape + white triangle)
@@ -168,7 +169,7 @@ export default function HeroSection() {
 
       <div className={styles.glow} />
       <div className={styles.content}>
-        <h1>Paste the link.</h1>
+        <h1 className={styles.title}>Paste the link.</h1>
 
         <div className={styles.inputCard} onClick={handleContainerClick}>
           <div className={styles.inputWrap}>
@@ -215,6 +216,7 @@ export default function HeroSection() {
               </div>
             );
           })}
+          <DepthModeToggle variant="inline" />
         </div>
       </div>
     </section>

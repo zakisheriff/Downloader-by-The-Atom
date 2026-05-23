@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Download, SlidersHorizontal, BookOpen, X, Coffee } from "lucide-react";
+import DepthModeToggle from "@/components/DepthModeToggle";
 import styles from "@/components/Sidebar.module.css";
 
 const navigation = [
@@ -19,7 +20,7 @@ export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
       <div className={styles.logoRow}>
         <Link href="/" className={styles.logo} onClick={onClose}>
           <div className={styles.logoCopy}>
-            <strong>Downloader by The Atom</strong>
+            <strong>Go Home</strong>
             <small>downloader.theatom.lk</small>
           </div>
         </Link>
@@ -50,6 +51,7 @@ export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
             </Link>
           );
         })}
+        <DepthModeToggle variant="sidebar" />
         <a
           href="https://buymeacoffee.com/theoneatom"
           target="_blank"

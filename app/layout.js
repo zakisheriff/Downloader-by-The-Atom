@@ -1,6 +1,7 @@
 import "./globals.css";
 import RouteShell from "@/components/RouteShell";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
+import { DepthModeProvider } from "@/components/providers/DepthModeProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -246,9 +247,11 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <ToastProvider>
-          <SmoothScrollProvider>
-            <RouteShell>{children}</RouteShell>
-          </SmoothScrollProvider>
+          <DepthModeProvider>
+            <SmoothScrollProvider>
+              <RouteShell>{children}</RouteShell>
+            </SmoothScrollProvider>
+          </DepthModeProvider>
         </ToastProvider>
         <Analytics />
       </body>

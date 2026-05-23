@@ -92,9 +92,7 @@
   border-radius: 35px;
   background: rgba(255, 255, 255, 0.76);
   border: 1px solid rgba(12, 12, 12, 0.08);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.94),
-    0 16px 48px rgba(14, 16, 20, 0.08);
+  box-shadow: var(--surface-soft-shadow);
   backdrop-filter: blur(18px);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   cursor: text;
@@ -104,10 +102,7 @@
 .inputCard:focus-within {
   background: rgba(255, 255, 255, 0.88);
   border-color: rgba(12, 12, 12, 0.2);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.96),
-    0 0 0 3px rgba(12, 12, 12, 0.04),
-    0 16px 48px rgba(14, 16, 20, 0.12);
+  box-shadow: var(--surface-soft-shadow-strong);
 }
 
 .inputWrap {
@@ -142,6 +137,8 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .loadingCard,
@@ -149,10 +146,18 @@
   background: rgba(255, 255, 255, 0.78);
 }
 
+.loadingLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(320px, 0.88fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
 .loadingCopy {
   display: flex;
   align-items: flex-start;
   gap: 14px;
+  padding: 8px 2px;
 }
 
 .loadingCopy strong,
@@ -250,9 +255,7 @@
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid rgba(12, 12, 12, 0.08);
-  box-shadow:
-    inset 0 2.5px 5px rgba(12, 12, 12, 0.06),
-    0 1px 0 rgba(255, 255, 255, 0.88);
+  box-shadow: var(--field-shadow);
 }
 
 .formatsBlock {
@@ -315,6 +318,39 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+  align-items: start;
+}
+
+:global(html[data-depth-mode="flat"]) .hero,
+:global(html[data-depth-mode="flat"]) .loadingCard,
+:global(html[data-depth-mode="flat"]) .errorCard,
+:global(html[data-depth-mode="flat"]) .previewCard,
+:global(html[data-depth-mode="flat"]) .warningCard,
+:global(html[data-depth-mode="flat"]) .groupCard {
+  border-color: rgba(12, 12, 12, 0.06);
+}
+
+:global(html[data-depth-mode="flat"]) .inputCard,
+:global(html[data-depth-mode="flat"]) .previewMeta div {
+  box-shadow: none;
+}
+
+:global(html[data-depth-mode="flat"]) .inputCard {
+  background: rgba(255, 255, 255, 0.68);
+}
+
+:global(html[data-depth-mode="flat"]) .inputCard:focus-within {
+  box-shadow: 0 0 0 3px rgba(12, 12, 12, 0.05);
+}
+
+:global(html[data-depth-mode="flat"]) .iconBtn,
+:global(html[data-depth-mode="flat"]) .sourceBadge {
+  box-shadow: none;
+}
+
+:global(html[data-depth-mode="flat"]) .thumbnail,
+:global(html[data-depth-mode="flat"]) .thumbnailFallback {
+  border: 1px solid rgba(12, 12, 12, 0.06);
 }
 
 @keyframes spin {
@@ -326,6 +362,10 @@
 @media (max-width: 1100px) {
   .previewCard,
   .formatsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .loadingLayout {
     grid-template-columns: 1fr;
   }
 }

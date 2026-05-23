@@ -6,6 +6,7 @@ import { Check, Copy, Link2, LoaderCircle, X } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import FormatCard from "@/components/FormatCard";
 import GlassCard from "@/components/GlassCard";
+import LoadingArcade from "@/components/LoadingArcade";
 import { useToast } from "@/components/providers/ToastProvider";
 import { isValidSourceUrl } from "@/utils/helpers";
 import styles from "@/components/LinkInspector.module.css";
@@ -256,12 +257,15 @@ export default function LinkInspector() {
 
       {loading ? (
         <GlassCard className={styles.loadingCard}>
-          <div className={styles.loadingCopy}>
-            <LoaderCircle size={22} className={styles.spin} />
-            <div>
-              <strong>Inspecting the source</strong>
-              <p>Fetching title, thumbnail, duration, and the best direct format options.</p>
+          <div className={styles.loadingLayout}>
+            <div className={styles.loadingCopy}>
+              <LoaderCircle size={22} className={styles.spin} />
+              <div>
+                <strong>Inspecting the source</strong>
+                <p>Fetching title, thumbnail, duration, and the best direct format options.</p>
+              </div>
             </div>
+            <LoadingArcade />
           </div>
         </GlassCard>
       ) : null}

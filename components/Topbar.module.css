@@ -9,6 +9,7 @@
   background: rgba(245, 245, 241, 0.82);
   backdrop-filter: blur(18px);
   border-bottom: 1px solid rgba(12, 12, 12, 0.08);
+  border-radius: 35px;
 }
 
 .mobileMenuButton,
@@ -201,4 +202,27 @@
     0 1px 0 rgba(12, 12, 12, 0.12),
     0 4px 8px rgba(14, 16, 20, 0.04),
     inset 0 1.5px 3px rgba(0, 0, 0, 0.08);
+}
+
+:global(html[data-depth-mode="flat"]) .mobileMenuButton,
+:global(html[data-depth-mode="flat"]) .desktopToggle,
+:global(html[data-depth-mode="flat"]) .navLink,
+:global(html[data-depth-mode="flat"]) .coffeeBtn {
+  box-shadow: none;
+}
+
+:global(html[data-depth-mode="flat"]) .navLink:hover,
+:global(html[data-depth-mode="flat"]) .navLinkActive,
+:global(html[data-depth-mode="flat"]) .coffeeBtn:hover,
+:global(html[data-depth-mode="flat"]) .mobileMenuButton:hover,
+:global(html[data-depth-mode="flat"]) .desktopToggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(14, 16, 20, 0.08);
+}
+
+:global(html[data-depth-mode="flat"]) .navLink:active,
+:global(html[data-depth-mode="flat"]) .coffeeBtn:active,
+:global(html[data-depth-mode="flat"]) .mobileMenuButton:active,
+:global(html[data-depth-mode="flat"]) .desktopToggle:active {
+  box-shadow: none;
 }

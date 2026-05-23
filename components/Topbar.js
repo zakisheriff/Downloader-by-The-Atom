@@ -16,7 +16,7 @@ const titles = {
   },
   "/blog": {
     title: "How it works",
-    description: "Guides on downloading from YouTube, Instagram, TikTok and more."
+    description: "Guides on downloading from Social Media"
   }
 };
 
@@ -54,9 +54,6 @@ export default function Topbar({ onMenuOpen }) {
       </div>
 
       <nav className={styles.actions}>
-        <Link href="/blog" className={`${styles.navLink} ${pathname?.startsWith("/blog") ? styles.navLinkActive : ""}`}>
-          How it works
-        </Link>
         <a
           href="https://buymeacoffee.com/theoneatom"
           target="_blank"

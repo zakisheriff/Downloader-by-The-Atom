@@ -234,6 +234,25 @@
   color: var(--text);
 }
 
+:global(html[data-depth-mode="flat"]) .card,
+:global(html[data-depth-mode="flat"]) .ctaBox {
+  box-shadow: none;
+}
+
+:global(html[data-depth-mode="flat"]) .card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(14, 16, 20, 0.05);
+}
+
+:global(html[data-depth-mode="flat"]) .ctaButton {
+  box-shadow: none;
+}
+
+:global(html[data-depth-mode="flat"]) .ctaButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(14, 16, 20, 0.08);
+}
+
 @media (max-width: 640px) {
   .page,
   .article {

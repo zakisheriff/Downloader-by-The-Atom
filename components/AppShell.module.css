@@ -1,20 +1,32 @@
 .shell {
   min-height: 100vh;
   display: flex;
-  background: var(--bg);
+  gap: 18px;
+  padding: 18px;
+  background:
+    var(--page-bg-layer-1),
+    var(--page-bg-layer-2),
+    var(--page-bg-layer-3);
 }
 
 .mainArea {
   flex: 1;
   min-width: 0;
+  background: transparent;
 }
 
 .main {
   padding: 24px;
   width: 100%;
+  background: transparent;
 }
 
 @media (max-width: 640px) {
+  .shell {
+    gap: 0;
+    padding: 0;
+  }
+
   .main {
     padding: 14px;
   }

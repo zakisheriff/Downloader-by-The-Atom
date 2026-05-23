@@ -19,11 +19,57 @@
   --surface-elevated: rgba(255, 255, 255, 0.96);
   --button-bg: linear-gradient(180deg, #1d1d1f, #0f0f10);
   --button-border: rgba(12, 12, 12, 0.14);
+  --page-bg-layer-1: radial-gradient(circle at top left, rgba(255, 255, 255, 0.85), transparent 32%);
+  --page-bg-layer-2: radial-gradient(circle at 92% 8%, rgba(224, 224, 216, 0.75), transparent 22%);
+  --page-bg-layer-3: linear-gradient(180deg, #fbfbf7 0%, #f2f2ec 58%, #ecece4 100%);
+  --surface-card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(251, 251, 247, 0.9));
+  --surface-card-shadow: 0 28px 70px rgba(14, 16, 20, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  --surface-card-backdrop: blur(18px);
+  --surface-soft-card: rgba(255, 255, 255, 0.76);
+  --surface-soft-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.94), 0 16px 48px rgba(14, 16, 20, 0.08);
+  --surface-soft-shadow-strong: inset 0 1px 0 rgba(255, 255, 255, 0.96), 0 0 0 3px rgba(12, 12, 12, 0.04), 0 16px 48px rgba(14, 16, 20, 0.12);
+  --surface-chip-bg: rgba(255, 255, 255, 0.82);
+  --surface-chip-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1.5px 0 rgba(0, 0, 0, 0.02), 0 12px 28px rgba(13, 15, 20, 0.05);
+  --field-bg: rgba(255, 255, 255, 0.76);
+  --field-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 1px 0 rgba(255, 255, 255, 0.8);
+  --field-focus-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(12, 12, 12, 0.04), 0 1px 0 rgba(255, 255, 255, 0.8);
+  --button-shadow: 0 2px 0 #050506, 0 10px 22px rgba(14, 16, 20, 0.1), inset 0 1.5px 0 rgba(255, 255, 255, 0.14);
+  --button-shadow-hover: 0 3px 0 #050506, 0 14px 28px rgba(14, 16, 20, 0.12), inset 0 1.5px 0 rgba(255, 255, 255, 0.18);
+  --button-shadow-active: 0 1px 0 #050506, 0 4px 10px rgba(14, 16, 20, 0.06), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  --button-shadow-disabled: 0 1px 0 rgba(12, 12, 12, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.12);
+  --toggle-bg: rgba(255, 255, 255, 0.82);
+  --toggle-border: rgba(12, 12, 12, 0.08);
+  --toggle-shadow: 0 14px 34px rgba(14, 16, 20, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.84);
   --radius-xl: 35px;
   --radius-lg: 35px;
   --radius-md: 35px;
   --radius-sm: 35px;
   --container: 1320px;
+}
+
+html[data-depth-mode="flat"] {
+  --page-bg-layer-1: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(246, 246, 241, 0.96) 100%);
+  --page-bg-layer-2: linear-gradient(180deg, rgba(246, 246, 241, 0.96) 0%, rgba(240, 240, 233, 1) 100%);
+  --page-bg-layer-3: linear-gradient(180deg, #fafaf6 0%, #f4f4ef 50%, #efefe9 100%);
+  --surface-card-bg: rgba(255, 255, 255, 0.82);
+  --surface-card-shadow: 0 10px 30px rgba(14, 16, 20, 0.04);
+  --surface-card-backdrop: blur(8px);
+  --surface-soft-card: rgba(255, 255, 255, 0.7);
+  --surface-soft-shadow: none;
+  --surface-soft-shadow-strong: 0 0 0 3px rgba(12, 12, 12, 0.03);
+  --surface-chip-bg: rgba(255, 255, 255, 0.74);
+  --surface-chip-shadow: none;
+  --field-bg: rgba(255, 255, 255, 0.72);
+  --field-shadow: none;
+  --field-focus-shadow: 0 0 0 3px rgba(12, 12, 12, 0.05);
+  --button-bg: #111111;
+  --button-shadow: none;
+  --button-shadow-hover: 0 6px 18px rgba(14, 16, 20, 0.08);
+  --button-shadow-active: none;
+  --button-shadow-disabled: none;
+  --toggle-bg: rgba(255, 255, 255, 0.78);
+  --toggle-border: rgba(12, 12, 12, 0.08);
+  --toggle-shadow: 0 10px 24px rgba(14, 16, 20, 0.06);
 }
 
 * {
@@ -44,9 +90,9 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.85), transparent 32%),
-    radial-gradient(circle at 92% 8%, rgba(224, 224, 216, 0.75), transparent 22%),
-    linear-gradient(180deg, #fbfbf7 0%, #f2f2ec 58%, #ecece4 100%);
+    var(--page-bg-layer-1),
+    var(--page-bg-layer-2),
+    var(--page-bg-layer-3);
   color: var(--text);
   font-family: var(--font-sans), sans-serif;
 }
@@ -70,40 +116,33 @@ button {
   background: var(--button-bg);
   color: #ffffff;
   transform: translateY(0);
-  box-shadow:
-    0 4px 0 #050506,
-    0 12px 28px rgba(14, 16, 20, 0.12),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.14);
+  box-shadow: var(--button-shadow);
   transition:
-    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
-    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
-    filter 0.12s ease;
+    transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
+    filter 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease;
 }
 
 button:hover,
 button:focus-visible {
-  transform: translateY(-2px);
-  box-shadow:
-    0 6px 0 #050506,
-    0 16px 36px rgba(14, 16, 20, 0.16),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+  box-shadow: var(--button-shadow-hover);
+  filter: brightness(1.02);
 }
 
 button:active {
-  transform: translateY(3px);
-  box-shadow:
-    0 1px 0 #050506,
-    0 6px 12px rgba(14, 16, 20, 0.08),
-    inset 0 2px 4px rgba(0, 0, 0, 0.24);
+  transform: translateY(1px);
+  box-shadow: var(--button-shadow-active);
+  filter: none;
 }
 
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: translateY(3px) !important;
-  box-shadow:
-    0 1px 0 rgba(12, 12, 12, 0.1),
-    inset 0 1px 2px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(1px) !important;
+  box-shadow: var(--button-shadow-disabled) !important;
 }
 
 input,
@@ -112,9 +151,8 @@ select {
   color: var(--text);
   border: 1px solid rgba(12, 12, 12, 0.08);
   border-radius: 35px;
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.06),
-    0 1px 0 rgba(255, 255, 255, 0.8);
+  background: var(--field-bg);
+  box-shadow: var(--field-shadow);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -123,10 +161,7 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: rgba(12, 12, 12, 0.22);
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.06),
-    0 0 0 3px rgba(12, 12, 12, 0.04),
-    0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: var(--field-focus-shadow);
 }
 
 img {
@@ -145,7 +180,7 @@ img {
 
 ::-webkit-scrollbar-track {
   background: rgba(12, 12, 12, 0.04);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -184,10 +219,7 @@ img {
   border-radius: 35px;
   color: var(--muted);
   font-size: 0.88rem;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -1.5px 0 rgba(0, 0, 0, 0.02),
-    0 12px 28px rgba(13, 15, 20, 0.05);
+  box-shadow: var(--surface-chip-shadow);
   backdrop-filter: blur(14px);
 }
 
@@ -202,10 +234,7 @@ img {
   border: 1px solid rgba(12, 12, 12, 0.09);
   font-size: 0.8rem;
   letter-spacing: 0.02em;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -1.5px 0 rgba(0, 0, 0, 0.02),
-    0 10px 24px rgba(13, 15, 20, 0.04);
+  box-shadow: var(--surface-chip-shadow);
   backdrop-filter: blur(16px);
 }
 

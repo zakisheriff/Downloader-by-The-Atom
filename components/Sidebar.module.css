@@ -1,8 +1,13 @@
 .desktop {
   width: 288px;
   min-width: 288px;
-  border-right: 1px solid rgba(12, 12, 12, 0.08);
   background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(12, 12, 12, 0.08);
+  border-radius: 42px;
+  box-shadow:
+    0 24px 60px rgba(18, 18, 22, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  overflow: hidden;
   transition:
     width 0.24s ease,
     min-width 0.24s ease;
@@ -14,13 +19,13 @@
 }
 
 .sidebar {
-  height: 100vh;
+  height: calc(100vh - 36px);
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: 24px 18px;
   position: sticky;
-  top: 0;
+  top: 18px;
   overflow: hidden;
 }
 
@@ -45,14 +50,14 @@
   border: 1px solid rgba(212, 150, 10, 0.3);
   transform: translateY(0);
   box-shadow:
-    0 3px 0 #ad7802,
-    0 10px 20px rgba(200, 130, 0, 0.08),
+    0 2px 0 #ad7802,
+    0 8px 18px rgba(200, 130, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   transition:
     background-color 0.12s ease,
     color 0.12s ease,
-    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
-    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1);
+    transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
   min-height: 52px;
 }
 
@@ -60,15 +65,15 @@
   background: linear-gradient(180deg, #fef8eb, #f7e6c4);
   color: #8a6000;
   border-color: rgba(212, 150, 10, 0.45);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow:
-    0 5px 0 #ad7802,
-    0 12px 24px rgba(200, 130, 0, 0.12),
+    0 3px 0 #ad7802,
+    0 10px 20px rgba(200, 130, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .coffeeLink:active {
-  transform: translateY(2px);
+  transform: translateY(1px);
   box-shadow:
     0 1px 0 #ad7802,
     0 4px 8px rgba(200, 130, 0, 0.04),
@@ -148,14 +153,14 @@
   border: 1px solid rgba(12, 12, 12, 0.06);
   transform: translateY(0);
   box-shadow:
-    0 3px 0 rgba(12, 12, 12, 0.06),
-    0 6px 12px rgba(14, 16, 20, 0.03),
+    0 2px 0 rgba(12, 12, 12, 0.05),
+    0 5px 10px rgba(14, 16, 20, 0.03),
     inset 0 1px 0 rgba(255, 255, 255, 0.82);
   transition:
     background-color 0.12s ease,
     color 0.12s ease,
-    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
-    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1);
+    transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.16s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .link svg {
@@ -166,10 +171,10 @@
 .link:hover {
   color: var(--text);
   background: rgba(255, 255, 255, 0.95);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow:
-    0 5px 0 rgba(12, 12, 12, 0.08),
-    0 8px 16px rgba(14, 16, 20, 0.05),
+    0 3px 0 rgba(12, 12, 12, 0.06),
+    0 8px 14px rgba(14, 16, 20, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
@@ -225,10 +230,10 @@
 .collapseButton:hover {
   background: #ffffff;
   color: var(--text);
-  transform: translateY(-1px);
+  transform: translateY(-0.5px);
   box-shadow:
-    0 3px 0 rgba(12, 12, 12, 0.12),
-    0 8px 16px rgba(0, 0, 0, 0.06);
+    0 2px 0 rgba(12, 12, 12, 0.12),
+    0 6px 12px rgba(0, 0, 0, 0.05);
 }
 
 .collapseButton svg {
@@ -236,6 +241,28 @@
   width: 18px;
   height: 18px;
   margin: 0;
+}
+
+:global(html[data-depth-mode="flat"]) .coffeeLink,
+:global(html[data-depth-mode="flat"]) .logoMark,
+:global(html[data-depth-mode="flat"]) .link,
+:global(html[data-depth-mode="flat"]) .collapseButton,
+:global(html[data-depth-mode="flat"]) .desktop {
+  box-shadow: none;
+}
+
+:global(html[data-depth-mode="flat"]) .coffeeLink:hover,
+:global(html[data-depth-mode="flat"]) .link:hover,
+:global(html[data-depth-mode="flat"]) .collapseButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(14, 16, 20, 0.06);
+}
+
+:global(html[data-depth-mode="flat"]) .coffeeLink:active,
+:global(html[data-depth-mode="flat"]) .active,
+:global(html[data-depth-mode="flat"]) .active:hover,
+:global(html[data-depth-mode="flat"]) .collapseButton:active {
+  box-shadow: none;
 }
 
 .collapsed .collapseButton svg {

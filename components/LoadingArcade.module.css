@@ -1,0 +1,249 @@
+.arcade {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(12, 12, 12, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.compact {
+  padding: 16px;
+  gap: 14px;
+}
+
+.header strong,
+.header p,
+.meta span,
+.meta strong {
+  display: block;
+  margin: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.header p,
+.meta span,
+.helperText {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.helperText {
+  margin: -4px 0 0;
+  font-size: 0.88rem;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tab {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(12, 12, 12, 0.08);
+  box-shadow: none;
+}
+
+.tab:hover,
+.tab:focus-visible {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.92);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(14, 16, 20, 0.06);
+}
+
+.tabActive {
+  color: #ffffff;
+  background: #111111;
+  border-color: rgba(12, 12, 12, 0.18);
+}
+
+.gamePanel {
+  display: grid;
+  gap: 14px;
+}
+
+.meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dotBoard {
+  position: relative;
+  min-height: 174px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.8), transparent 52%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(247, 247, 241, 0.84));
+  border: 1px solid rgba(12, 12, 12, 0.08);
+  overflow: hidden;
+}
+
+.dot {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(12, 12, 12, 0.1);
+  background: linear-gradient(180deg, #262628, #111112);
+  box-shadow: 0 10px 24px rgba(14, 16, 20, 0.16);
+}
+
+.dot:hover,
+.dot:focus-visible {
+  transform: translate(-50%, -50%) scale(1.04);
+  box-shadow: 0 12px 26px rgba(14, 16, 20, 0.18);
+}
+
+.dot:active {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+.numberGrid,
+.memoryGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.numberGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.numberCard,
+.memoryTile {
+  min-height: 124px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(12, 12, 12, 0.08);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.numberCard {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 12px;
+}
+
+.numberCard span {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.numberCard strong {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2rem, 5vw, 2.5rem);
+  letter-spacing: -0.04em;
+}
+
+.memoryGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.memoryTile {
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  min-height: 84px;
+  padding: 0;
+}
+
+.memoryTile span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(12, 12, 12, 0.14);
+  opacity: 0.58;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.memoryTile:disabled {
+  opacity: 1;
+  cursor: default;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.memoryReveal {
+  background: linear-gradient(180deg, #1d1d1f, #0f0f10);
+  border-color: rgba(12, 12, 12, 0.16);
+  box-shadow: 0 12px 26px rgba(14, 16, 20, 0.14);
+}
+
+.memoryReveal span,
+.memoryStep span,
+.memoryWin span,
+.memoryMiss span {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+.memoryReveal span {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.memoryStep {
+  background: rgba(17, 17, 17, 0.08);
+  border-color: rgba(12, 12, 12, 0.12);
+}
+
+.memoryStep span {
+  background: #111111;
+}
+
+.memoryWin {
+  background: linear-gradient(180deg, #1a7f63, #0d5f49);
+  border-color: rgba(13, 95, 73, 0.28);
+}
+
+.memoryMiss {
+  background: linear-gradient(180deg, #c65d5d, #a83f3f);
+  border-color: rgba(168, 63, 63, 0.3);
+}
+
+.memoryWin span,
+.memoryMiss span {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+:global(html[data-depth-mode="flat"]) .arcade {
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 760px) {
+  .arcade {
+    padding: 18px;
+  }
+
+  .numberGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .numberCard {
+    min-height: 96px;
+  }
+
+  .memoryTile {
+    min-height: 72px;
+  }
+}
