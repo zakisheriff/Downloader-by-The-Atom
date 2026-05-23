@@ -2,6 +2,7 @@ import "./globals.css";
 import RouteShell from "@/components/RouteShell";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 const siteUrl = "https://downloader.theatom.lk";
 const siteTitle = "Downloader by The Atom — Free YouTube, Instagram & TikTok Video Downloader";
@@ -249,6 +250,7 @@ export default function RootLayout({ children }) {
             <RouteShell>{children}</RouteShell>
           </SmoothScrollProvider>
         </ToastProvider>
+        <Analytics />
       </body>
     </html>
   );
