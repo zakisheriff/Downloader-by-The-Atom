@@ -14,13 +14,65 @@ function randomIndex(max) {
 export default function LoadingArcade({
   compact = false,
   title = "Play while we fetch",
-  subtitle = "Three tiny games for the short wait."
+  subtitle = "Interactive games to pass the short wait."
 }) {
   const [activeGame, setActiveGame] = useState("dot");
+
+  // Game 1: Dot Tap
   const [dotScore, setDotScore] = useState(0);
   const [dotPosition, setDotPosition] = useState({ top: 42, left: 48 });
+
+  const moveDot = () => {
+    setDotPosition({
+      top: randomPercent(18, 78),
+      left: randomPercent(12, 84)
+    });
+  };
+
+  const handleDotTap = () => {
+    setDotScore((score) => score + 1);
+    moveDot();
+  };
+
+  // Game 2: Higher Number (Streak)
   const [numberScore, setNumberScore] = useState(0);
   const [numberPair, setNumberPair] = useState({ left: 28, right: 61 });
+  const [numberFeedback, setNumberFeedback] = useState({ side: null, state: null }); // state: 'win' | 'miss'
+  const [numberLocked, setNumberLocked] = useState(false);
+
+  const rollNumbers = () => {
+    const left = randomPercent(10, 99);
+    let right = randomPercent(10, 99);
+    while (left === right) {
+      right = randomPercent(10, 99);
+    }
+    setNumberPair({ left, right });
+  };
+
+  const chooseNumber = (side) => {
+    if (numberLocked) return;
+    setNumberLocked(true);
+
+    const picked = numberPair[side];
+    const other = side === "left" ? numberPair.right : numberPair.left;
+    const isCorrect = picked > other;
+
+    if (isCorrect) {
+      setNumberScore((score) => score + 1);
+      setNumberFeedback({ side, state: "win" });
+    } else {
+      setNumberScore(0);
+      setNumberFeedback({ side, state: "miss" });
+    }
+
+    window.setTimeout(() => {
+      rollNumbers();
+      setNumberFeedback({ side: null, state: null });
+      setNumberLocked(false);
+    }, 450);
+  };
+
+  // Game 3: Memory Pattern (Streak)
   const [memoryScore, setMemoryScore] = useState(0);
   const [memorySequence, setMemorySequence] = useState([0, 4]);
   const [memoryRevealIndex, setMemoryRevealIndex] = useState(-1);
@@ -63,38 +115,6 @@ export default function LoadingArcade({
       timeouts.forEach((timeout) => window.clearTimeout(timeout));
     };
   }, [memorySequence, activeGame]);
-
-  const moveDot = () => {
-    setDotPosition({
-      top: randomPercent(18, 78),
-      left: randomPercent(12, 84)
-    });
-  };
-
-  const handleDotTap = () => {
-    setDotScore((score) => score + 1);
-    moveDot();
-  };
-
-  const rollNumbers = () => {
-    setNumberPair({
-      left: randomPercent(10, 99),
-      right: randomPercent(10, 99)
-    });
-  };
-
-  const chooseNumber = (side) => {
-    const picked = numberPair[side];
-    const other = side === "left" ? numberPair.right : numberPair.left;
-
-    if (picked >= other) {
-      setNumberScore((score) => score + 1);
-    } else {
-      setNumberScore(0);
-    }
-
-    rollNumbers();
-  };
 
   const nextMemoryRound = (didWin) => {
     if (didWin) {
@@ -140,6 +160,156 @@ export default function LoadingArcade({
     }, 240);
   };
 
+  // Game 4: Rock Paper Scissors (RPS - Streak)
+  const [rpsScore, setRpsScore] = useState(0);
+  const [rpsResult, setRpsResult] = useState("Choose your element to begin!");
+  const [rpsFeedback, setRpsFeedback] = useState({ choice: null, state: null }); // state: 'win' | 'miss' | 'draw'
+  const [rpsLocked, setRpsLocked] = useState(false);
+
+  const playRps = (userChoice) => {
+    if (rpsLocked) return;
+    setRpsLocked(true);
+
+    const choices = ["rock", "paper", "scissors"];
+    const compChoice = choices[randomIndex(3)];
+    const emojiMap = { rock: "✊", paper: "✋", scissors: "✌️" };
+
+    const draw = userChoice === compChoice;
+    let win = false;
+    if (!draw) {
+      if (
+        (userChoice === "rock" && compChoice === "scissors") ||
+        (userChoice === "paper" && compChoice === "rock") ||
+        (userChoice === "scissors" && compChoice === "paper")
+      ) {
+        win = true;
+      }
+    }
+
+    setRpsFeedback({ choice: userChoice, state: draw ? "draw" : (win ? "win" : "miss") });
+
+    if (draw) {
+      setRpsResult(`Draw! Both chose ${emojiMap[userChoice]}.`);
+    } else if (win) {
+      setRpsScore((s) => s + 1);
+      setRpsResult(`You won! ${emojiMap[userChoice]} beats ${emojiMap[compChoice]}.`);
+    } else {
+      setRpsScore(0);
+      setRpsResult(`You lost! ${emojiMap[compChoice]} beats ${emojiMap[userChoice]}.`);
+    }
+
+    window.setTimeout(() => {
+      setRpsFeedback({ choice: null, state: null });
+      setRpsLocked(false);
+    }, 850);
+  };
+
+  // Game 5: Tap Rush (CPS test)
+  const [rushClicks, setRushClicks] = useState(0);
+  const [rushHigh, setRushHigh] = useState(0);
+  const [rushTimeLeft, setRushTimeLeft] = useState(5.0);
+  const [rushActive, setRushActive] = useState(false);
+  const [rushFinished, setRushFinished] = useState(false);
+
+  const startRushGame = () => {
+    setRushClicks(1);
+    setRushTimeLeft(5.0);
+    setRushActive(true);
+    setRushFinished(false);
+  };
+
+  const clickRush = () => {
+    if (rushFinished) {
+      startRushGame();
+      return;
+    }
+    if (!rushActive) {
+      startRushGame();
+      return;
+    }
+    setRushClicks((c) => c + 1);
+  };
+
+  useEffect(() => {
+    if (!rushActive) return;
+    const timer = window.setInterval(() => {
+      setRushTimeLeft((t) => {
+        if (t <= 0.1) {
+          clearInterval(timer);
+          setRushActive(false);
+          setRushFinished(true);
+          return 0;
+        }
+        return Math.round((t - 0.1) * 10) / 10;
+      });
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [rushActive]);
+
+  useEffect(() => {
+    if (rushFinished && rushClicks > rushHigh) {
+      setRushHigh(rushClicks);
+    }
+  }, [rushFinished, rushClicks, rushHigh]);
+
+  // Game 6: Color Match (Stroop Effect - Streak)
+  const [colorScore, setColorScore] = useState(0);
+  const [colorLocked, setColorLocked] = useState(false);
+  const [colorFeedback, setColorFeedback] = useState(null); // 'win' | 'miss'
+
+  const colors = useMemo(() => ["RED", "BLUE", "GREEN", "YELLOW", "PURPLE"], []);
+  const colorValues = useMemo(() => ({
+    RED: "#FF3B30",
+    BLUE: "#007AFF",
+    GREEN: "#34C759",
+    YELLOW: "#FFCC00",
+    PURPLE: "#AF52DE"
+  }), []);
+
+  const [currentColor, setCurrentColor] = useState({ text: "RED", valueName: "RED" });
+
+  const rollColorMatch = () => {
+    const text = colors[randomIndex(colors.length)];
+    const matching = Math.random() > 0.4;
+    let valueName;
+    if (matching) {
+      valueName = text;
+    } else {
+      valueName = colors[randomIndex(colors.length)];
+      while (valueName === text) {
+        valueName = colors[randomIndex(colors.length)];
+      }
+    }
+    setCurrentColor({ text, valueName });
+  };
+
+  useEffect(() => {
+    rollColorMatch();
+  }, []);
+
+  const answerColorMatch = (userAnswer) => {
+    if (colorLocked) return;
+    setColorLocked(true);
+
+    const isMatch = currentColor.text === currentColor.valueName;
+    const correct = userAnswer === isMatch;
+
+    if (correct) {
+      setColorScore((s) => s + 1);
+      setColorFeedback("win");
+    } else {
+      setColorScore(0);
+      setColorFeedback("miss");
+    }
+
+    window.setTimeout(() => {
+      rollColorMatch();
+      setColorFeedback(null);
+      setColorLocked(false);
+    }, 500);
+  };
+
   return (
     <div className={`${styles.arcade} ${compact ? styles.compact : ""}`.trim()}>
       <div className={styles.header}>
@@ -171,8 +341,30 @@ export default function LoadingArcade({
         >
           Pattern
         </button>
+        <button
+          type="button"
+          className={`${styles.tab} ${activeGame === "rps" ? styles.tabActive : ""}`}
+          onClick={() => setActiveGame("rps")}
+        >
+          RPS
+        </button>
+        <button
+          type="button"
+          className={`${styles.tab} ${activeGame === "rush" ? styles.tabActive : ""}`}
+          onClick={() => setActiveGame("rush")}
+        >
+          Tap rush
+        </button>
+        <button
+          type="button"
+          className={`${styles.tab} ${activeGame === "color" ? styles.tabActive : ""}`}
+          onClick={() => setActiveGame("color")}
+        >
+          Color Match
+        </button>
       </div>
 
+      {/* Game 1: Dot Tap */}
       {activeGame === "dot" ? (
         <div className={styles.gamePanel}>
           <div className={styles.meta}>
@@ -191,6 +383,7 @@ export default function LoadingArcade({
         </div>
       ) : null}
 
+      {/* Game 2: Higher Number */}
       {activeGame === "number" ? (
         <div className={styles.gamePanel}>
           <div className={styles.meta}>
@@ -198,11 +391,29 @@ export default function LoadingArcade({
             <strong>{numberScore}</strong>
           </div>
           <div className={styles.numberGrid}>
-            <button type="button" className={styles.numberCard} onClick={() => chooseNumber("left")}>
+            <button
+              type="button"
+              className={[
+                styles.numberCard,
+                numberFeedback.side === "left" && numberFeedback.state === "win" ? styles.numberCardWin : "",
+                numberFeedback.side === "left" && numberFeedback.state === "miss" ? styles.numberCardMiss : ""
+              ].filter(Boolean).join(" ")}
+              onClick={() => chooseNumber("left")}
+              disabled={numberLocked}
+            >
               <span>Pick</span>
               <strong>{numberPair.left}</strong>
             </button>
-            <button type="button" className={styles.numberCard} onClick={() => chooseNumber("right")}>
+            <button
+              type="button"
+              className={[
+                styles.numberCard,
+                numberFeedback.side === "right" && numberFeedback.state === "win" ? styles.numberCardWin : "",
+                numberFeedback.side === "right" && numberFeedback.state === "miss" ? styles.numberCardMiss : ""
+              ].filter(Boolean).join(" ")}
+              onClick={() => chooseNumber("right")}
+              disabled={numberLocked}
+            >
               <span>Pick</span>
               <strong>{numberPair.right}</strong>
             </button>
@@ -210,6 +421,7 @@ export default function LoadingArcade({
         </div>
       ) : null}
 
+      {/* Game 3: Memory Pattern */}
       {activeGame === "memory" ? (
         <div className={styles.gamePanel}>
           <div className={styles.meta}>
@@ -240,6 +452,122 @@ export default function LoadingArcade({
                 <span />
               </button>
             ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Game 4: Rock Paper Scissors */}
+      {activeGame === "rps" ? (
+        <div className={styles.gamePanel}>
+          <div className={styles.meta}>
+            <span>Streak</span>
+            <strong>{rpsScore}</strong>
+          </div>
+          <p className={styles.rpsStatus}>{rpsResult}</p>
+          <div className={styles.rpsGrid}>
+            <button
+              type="button"
+              className={[
+                styles.rpsCard,
+                rpsFeedback.choice === "rock" && rpsFeedback.state === "win" ? styles.choiceWin : "",
+                rpsFeedback.choice === "rock" && rpsFeedback.state === "draw" ? styles.memoryStep : "",
+                rpsFeedback.choice === "rock" && rpsFeedback.state === "miss" ? styles.choiceMiss : ""
+              ].filter(Boolean).join(" ")}
+              onClick={() => playRps("rock")}
+              disabled={rpsLocked}
+            >
+              ✊
+            </button>
+            <button
+              type="button"
+              className={[
+                styles.rpsCard,
+                rpsFeedback.choice === "paper" && rpsFeedback.state === "win" ? styles.choiceWin : "",
+                rpsFeedback.choice === "paper" && rpsFeedback.state === "draw" ? styles.memoryStep : "",
+                rpsFeedback.choice === "paper" && rpsFeedback.state === "miss" ? styles.choiceMiss : ""
+              ].filter(Boolean).join(" ")}
+              onClick={() => playRps("paper")}
+              disabled={rpsLocked}
+            >
+              ✋
+            </button>
+            <button
+              type="button"
+              className={[
+                styles.rpsCard,
+                rpsFeedback.choice === "scissors" && rpsFeedback.state === "win" ? styles.choiceWin : "",
+                rpsFeedback.choice === "scissors" && rpsFeedback.state === "draw" ? styles.memoryStep : "",
+                rpsFeedback.choice === "scissors" && rpsFeedback.state === "miss" ? styles.choiceMiss : ""
+              ].filter(Boolean).join(" ")}
+              onClick={() => playRps("scissors")}
+              disabled={rpsLocked}
+            >
+              ✌️
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Game 5: Tap Rush */}
+      {activeGame === "rush" ? (
+        <div className={styles.rushPanel}>
+          <div className={styles.rushMeta}>
+            <span>Time Left: <strong>{rushTimeLeft.toFixed(1)}s</strong></span>
+            <span>Record: <strong>{rushHigh} clicks</strong></span>
+          </div>
+          <button type="button" className={styles.rushBtn} onClick={clickRush}>
+            {rushFinished
+              ? `Done! Score: ${rushClicks} (Tap to retry)`
+              : rushActive
+              ? `Taps: ${rushClicks}`
+              : "Tap here to start!"}
+          </button>
+        </div>
+      ) : null}
+
+      {/* Game 6: Color Match */}
+      {activeGame === "color" ? (
+        <div className={styles.gamePanel}>
+          <div className={styles.meta}>
+            <span>Streak</span>
+            <strong>{colorScore}</strong>
+          </div>
+          <div className={styles.colorWordBox}>
+            <span
+              className={styles.colorWord}
+              style={{ color: colorValues[currentColor.valueName] }}
+            >
+              {currentColor.text}
+            </span>
+          </div>
+          <p className={styles.helperText} style={{ textAlign: "center", fontSize: "0.85rem" }}>
+            Does the word match its font color?
+          </p>
+          <div className={styles.choiceGrid}>
+            <button
+              type="button"
+              className={[
+                styles.choiceCard,
+                colorFeedback === "win" ? styles.choiceWin : "",
+                colorFeedback === "miss" ? styles.choiceMiss : ""
+              ].filter(Boolean).join(" ")}
+              onClick={() => answerColorMatch(true)}
+              disabled={colorLocked}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className={[
+                styles.choiceCard,
+                colorFeedback === "win" ? styles.choiceWin : "",
+                colorFeedback === "miss" ? styles.choiceMiss : ""
+              ].filter(Boolean).join(" ")}
+              onClick={() => answerColorMatch(false)}
+              disabled={colorLocked}
+            >
+              No
+            </button>
           </div>
         </div>
       ) : null}
