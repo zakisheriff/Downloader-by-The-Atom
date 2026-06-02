@@ -159,6 +159,7 @@
   display: grid;
   grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1fr);
   gap: 22px;
+  min-width: 0;
 }
 
 .previewMedia {
@@ -186,6 +187,9 @@
 .previewCopy {
   display: grid;
   gap: 16px;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .sourceBadge {
@@ -394,8 +398,38 @@
     margin: 0;
   }
 
+  .previewMedia {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .previewCopy h2 {
+    font-size: 1.35rem;
+    letter-spacing: -0.02em;
+  }
+
+  .previewCopy p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
   .previewMeta {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .previewMeta div {
+    padding: 10px 8px;
+    border-radius: 20px;
+  }
+
+  .previewMeta span {
+    font-size: 0.72rem;
+  }
+
+  .previewMeta strong {
+    font-size: 0.8rem;
   }
 
   .groupHeader {

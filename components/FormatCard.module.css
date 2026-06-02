@@ -1,9 +1,10 @@
 .card {
-  padding: 22px;
+  padding: 24px;
   display: grid;
-  gap: 18px;
+  gap: 24px;
   align-content: start;
   align-self: start;
+  border-radius: 35px !important;
 }
 
 .top {
@@ -63,49 +64,7 @@
 }
 
 .button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 54px;
-  border-radius: 35px;
-  background: linear-gradient(180deg, #1d1d1f, #0f0f10);
-  color: #ffffff;
-  border: 1px solid rgba(12, 12, 12, 0.2);
-  transform: translateY(0);
-  box-shadow:
-    0 2px 0 #050506,
-    0 10px 22px rgba(14, 16, 20, 0.1),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.14);
-  transition:
-    transform 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
-    box-shadow 0.16s cubic-bezier(0.22, 0.61, 0.36, 1),
-    filter 0.16s ease;
-}
-
-.button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow:
-    0 3px 0 #050506,
-    0 14px 28px rgba(14, 16, 20, 0.12),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.18);
-}
-
-.button:active:not(:disabled) {
-  transform: translateY(1px);
-  box-shadow:
-    0 1px 0 #050506,
-    0 4px 10px rgba(14, 16, 20, 0.06),
-    inset 0 2px 4px rgba(0, 0, 0, 0.24);
-}
-
-.button:disabled {
-  opacity: 0.62;
-  cursor: not-allowed;
-  transform: translateY(1px) !important;
-  box-shadow:
-    0 1px 0 rgba(12, 12, 12, 0.1),
-    inset 0 1px 2px rgba(0, 0, 0, 0.12) !important;
+  width: 100%;
 }
 
 .arcadeWrap {
@@ -114,25 +73,6 @@
 
 .spin {
   animation: spin 0.9s linear infinite;
-}
-
-:global(html[data-depth-mode="flat"]) .iconWrap,
-:global(html[data-depth-mode="flat"]) .meta span {
-  box-shadow: none;
-}
-
-:global(html[data-depth-mode="flat"]) .button {
-  box-shadow: none;
-}
-
-:global(html[data-depth-mode="flat"]) .button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(14, 16, 20, 0.08);
-}
-
-:global(html[data-depth-mode="flat"]) .button:active:not(:disabled),
-:global(html[data-depth-mode="flat"]) .button:disabled {
-  box-shadow: none;
 }
 
 @keyframes spin {

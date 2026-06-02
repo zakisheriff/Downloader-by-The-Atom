@@ -177,7 +177,6 @@ export default function HeroSection() {
       const text = await navigator.clipboard.readText();
       if (text) {
         setInput(text);
-        inputRef.current?.focus();
       }
     } catch (err) {
       console.error("Failed to read clipboard contents: ", err);
@@ -223,7 +222,10 @@ export default function HeroSection() {
               <>
                 <GlassButton
                   className={styles.iconBtn}
-                  onClick={handleCopy}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopy();
+                  }}
                   title={copied ? "Copied!" : "Copy link"}
                   aria-label="Copy link"
                   type="button"
@@ -236,7 +238,10 @@ export default function HeroSection() {
                 </GlassButton>
                 <GlassButton
                   className={styles.iconBtn}
-                  onClick={handleClear}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClear();
+                  }}
                   title="Clear"
                   aria-label="Clear input"
                   type="button"
@@ -251,7 +256,10 @@ export default function HeroSection() {
             ) : (
               <GlassButton
                 className={styles.iconBtn}
-                onClick={handlePaste}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePaste();
+                }}
                 title="Paste from clipboard"
                 aria-label="Paste from clipboard"
                 type="button"
@@ -265,7 +273,10 @@ export default function HeroSection() {
             )}
           </div>
           <GlassButton
-            onClick={handleStart}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStart();
+            }}
             disabled={!input.trim()}
             className={styles.startBtn}
             size="lg"

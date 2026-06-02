@@ -244,7 +244,6 @@ export default function LinkInspector() {
       const text = await navigator.clipboard.readText();
       if (text) {
         setInput(text);
-        inputRef.current?.focus();
       }
     } catch (err) {
       console.error("Failed to read clipboard contents: ", err);
@@ -277,7 +276,10 @@ export default function LinkInspector() {
               <>
                 <GlassButton
                   className={styles.iconBtn}
-                  onClick={handleCopy}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopy();
+                  }}
                   title={copied ? "Copied!" : "Copy link"}
                   aria-label="Copy link"
                   type="button"
@@ -290,7 +292,10 @@ export default function LinkInspector() {
                 </GlassButton>
                 <GlassButton
                   className={styles.iconBtn}
-                  onClick={handleClear}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClear();
+                  }}
                   title="Clear"
                   aria-label="Clear input"
                   type="button"
@@ -305,7 +310,10 @@ export default function LinkInspector() {
             ) : (
               <GlassButton
                 className={styles.iconBtn}
-                onClick={handlePaste}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePaste();
+                }}
                 title="Paste from clipboard"
                 aria-label="Paste from clipboard"
                 type="button"
@@ -320,7 +328,10 @@ export default function LinkInspector() {
           </div>
           <GlassButton
             className={styles.primaryButton}
-            onClick={handleInspect}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleInspect();
+            }}
             size="lg"
             intensity={6}
             disabled={loading}

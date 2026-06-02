@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ArrowDownToLine, LoaderCircle, Music4, PlaySquare } from "lucide-react";
-import GlassCard from "@/components/GlassCard";
+import { GlassCard, GlassButton } from "@zakisheriff/liquid-glass";
 import LoadingArcade from "@/components/LoadingArcade";
 import { useToast } from "@/components/providers/ToastProvider";
 import styles from "@/components/FormatCard.module.css";
@@ -201,7 +201,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
   };
 
   return (
-    <GlassCard className={styles.card}>
+    <GlassCard className={styles.card} padding="24px">
       <div className={styles.top}>
         <div className={styles.iconWrap}>
           <Icon size={18} />
@@ -219,19 +219,19 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
         {isBlocked ? <span>Unavailable</span> : null}
       </div>
 
-      <button
+      <GlassButton
         onClick={handleDownload}
         className={styles.button}
         disabled={downloading || isBlocked}
-        style={{
-          background: downloading && downloadProgress > 0
-            ? `linear-gradient(to right, rgba(255, 255, 255, 0.16) ${downloadProgress}%, transparent ${downloadProgress}%), linear-gradient(180deg, #111111, #050505)`
-            : undefined
-        }}
+        size="lg"
+        intensity={6}
+        style={downloading && downloadProgress > 0 ? {
+          "--glass-surface-background": `linear-gradient(to right, rgba(255, 255, 255, 0.16) ${downloadProgress}%, transparent ${downloadProgress}%)`
+        } : undefined}
       >
         {downloading ? <LoaderCircle size={16} className={styles.spin} /> : <ArrowDownToLine size={16} />}
         {downloading ? (downloadStatus || "Preparing...") : isBlocked ? "Unavailable" : "Download"}
-      </button>
+      </GlassButton>
 
       {downloading ? (
         <div className={styles.arcadeWrap}>
