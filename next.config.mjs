@@ -5,7 +5,6 @@ const nextConfig = {
   images: {
     remotePatterns: []
   },
-  outputFileTracingRoot: path.join(process.cwd(), ".."),
   async headers() {
     return [
       {

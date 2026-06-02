@@ -183,6 +183,8 @@
 
 .previewMedia {
   min-width: 0;
+  max-width: 480px;
+  width: 100%;
 }
 
 .thumbnail,
@@ -362,6 +364,10 @@
 
   .loadingLayout {
     grid-template-columns: 1fr;
+  }
+
+  .previewMedia {
+    margin: 0 auto;
   }
 }
 
