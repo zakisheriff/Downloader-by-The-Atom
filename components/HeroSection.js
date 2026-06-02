@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Copy, Link2, X } from "lucide-react";
+import { ArrowRight, Check, Clipboard, Copy, Link2, X } from "lucide-react";
 import DepthModeToggle from "@/components/DepthModeToggle";
 import styles from "@/components/HeroSection.module.css";
 
@@ -146,6 +146,18 @@ export default function HeroSection() {
     } catch { /* ignore */ }
   };
 
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setInput(text);
+        inputRef.current?.focus();
+      }
+    } catch (err) {
+      console.error("Failed to read clipboard contents: ", err);
+    }
+  };
+
   const handleClear = () => setInput("");
 
   return (
@@ -180,13 +192,14 @@ export default function HeroSection() {
               onKeyDown={(e) => e.key === "Enter" && handleStart()}
               placeholder="Paste https://youtube.com/... or any supported public link"
             />
-            {input && (
+            {input ? (
               <>
                 <button
                   className={styles.iconBtn}
                   onClick={handleCopy}
                   title={copied ? "Copied!" : "Copy link"}
                   aria-label="Copy link"
+                  type="button"
                 >
                   {copied ? <Check size={14} /> : <Copy size={14} />}
                 </button>
@@ -195,10 +208,21 @@ export default function HeroSection() {
                   onClick={handleClear}
                   title="Clear"
                   aria-label="Clear input"
+                  type="button"
                 >
                   <X size={14} />
                 </button>
               </>
+            ) : (
+              <button
+                className={styles.iconBtn}
+                onClick={handlePaste}
+                title="Paste from clipboard"
+                aria-label="Paste from clipboard"
+                type="button"
+              >
+                <Clipboard size={14} />
+              </button>
             )}
           </div>
           <button onClick={handleStart} style={{ fontWeight: 700 }} disabled={!input.trim()} className={styles.startBtn}>

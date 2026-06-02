@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, Copy, Link2, LoaderCircle, X } from "lucide-react";
+import { Check, Clipboard, Copy, Link2, LoaderCircle, X } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import FormatCard from "@/components/FormatCard";
 import GlassCard from "@/components/GlassCard";
@@ -213,6 +213,18 @@ export default function LinkInspector() {
     } catch { /* ignore */ }
   };
 
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setInput(text);
+        inputRef.current?.focus();
+      }
+    } catch (err) {
+      console.error("Failed to read clipboard contents: ", err);
+    }
+  };
+
   const handleClear = () => {
     setInput("");
     setMedia(null);
@@ -234,13 +246,14 @@ export default function LinkInspector() {
               onKeyDown={(e) => e.key === "Enter" && handleInspect()}
               placeholder="Paste https://youtube.com/... or any supported public link"
             />
-            {input && (
+            {input ? (
               <>
                 <button
                   className={styles.iconBtn}
                   onClick={handleCopy}
                   title={copied ? "Copied!" : "Copy link"}
                   aria-label="Copy link"
+                  type="button"
                 >
                   {copied ? <Check size={15} /> : <Copy size={15} />}
                 </button>
@@ -249,10 +262,21 @@ export default function LinkInspector() {
                   onClick={handleClear}
                   title="Clear"
                   aria-label="Clear input"
+                  type="button"
                 >
                   <X size={15} />
                 </button>
               </>
+            ) : (
+              <button
+                className={styles.iconBtn}
+                onClick={handlePaste}
+                title="Paste from clipboard"
+                aria-label="Paste from clipboard"
+                type="button"
+              >
+                <Clipboard size={15} />
+              </button>
             )}
           </div>
           <button className={styles.primaryButton} onClick={handleInspect}>
