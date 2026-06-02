@@ -334,10 +334,6 @@
   box-shadow: none;
 }
 
-:global(html[data-depth-mode="flat"]) .inputCard {
-  background: rgba(255, 255, 255, 0.68);
-}
-
 :global(html[data-depth-mode="flat"]) .inputCard:focus-within {
   box-shadow: 0 0 0 3px rgba(12, 12, 12, 0.05);
 }

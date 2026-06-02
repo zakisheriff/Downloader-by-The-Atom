@@ -348,7 +348,6 @@
 
 :global(html[data-depth-mode="flat"]) .arcade {
   box-shadow: none;
-  background: rgba(255, 255, 255, 0.6);
 }
 
 @media (max-width: 760px) {

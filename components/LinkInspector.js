@@ -143,6 +143,13 @@ export default function LinkInspector() {
     setLoading(true);
     setError("");
 
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+      if (window.lenis) {
+        window.lenis.scrollTo(0, { immediate: true });
+      }
+    }
+
     try {
       const data = await getJson(`${apiBase}/api/media/inspect?url=${encodeURIComponent(sourceUrl)}`);
       setMedia(data.media);

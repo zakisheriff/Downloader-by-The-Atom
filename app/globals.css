@@ -48,18 +48,11 @@
 }
 
 html[data-depth-mode="flat"] {
-  --page-bg-layer-1: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(246, 246, 241, 0.96) 100%);
-  --page-bg-layer-2: linear-gradient(180deg, rgba(246, 246, 241, 0.96) 0%, rgba(240, 240, 233, 1) 100%);
-  --page-bg-layer-3: linear-gradient(180deg, #fafaf6 0%, #f4f4ef 50%, #efefe9 100%);
-  --surface-card-bg: rgba(255, 255, 255, 0.82);
   --surface-card-shadow: 0 10px 30px rgba(14, 16, 20, 0.04);
   --surface-card-backdrop: blur(8px);
-  --surface-soft-card: rgba(255, 255, 255, 0.7);
   --surface-soft-shadow: none;
   --surface-soft-shadow-strong: 0 0 0 3px rgba(12, 12, 12, 0.03);
-  --surface-chip-bg: rgba(255, 255, 255, 0.74);
   --surface-chip-shadow: none;
-  --field-bg: rgba(255, 255, 255, 0.72);
   --field-shadow: none;
   --field-focus-shadow: 0 0 0 3px rgba(12, 12, 12, 0.05);
   --button-bg: #111111;
@@ -67,8 +60,6 @@ html[data-depth-mode="flat"] {
   --button-shadow-hover: 0 6px 18px rgba(14, 16, 20, 0.08);
   --button-shadow-active: none;
   --button-shadow-disabled: none;
-  --toggle-bg: rgba(255, 255, 255, 0.78);
-  --toggle-border: rgba(12, 12, 12, 0.08);
   --toggle-shadow: 0 10px 24px rgba(14, 16, 20, 0.06);
 }
 

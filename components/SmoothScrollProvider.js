@@ -22,6 +22,7 @@ export default function SmoothScrollProvider({ children }) {
     });
 
     lenisRef.current = lenis;
+    window.lenis = lenis;
 
     const raf = (time) => {
       lenis.raf(time);
@@ -33,6 +34,7 @@ export default function SmoothScrollProvider({ children }) {
     return () => {
       lenis.destroy();
       lenisRef.current = null;
+      window.lenis = null;
     };
   }, []);
 
