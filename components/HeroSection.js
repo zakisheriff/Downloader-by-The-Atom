@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Clipboard, Copy, Link2, X } from "lucide-react";
 import DepthModeToggle from "@/components/DepthModeToggle";
 import styles from "@/components/HeroSection.module.css";
+import { useGlassEffect, GlassButton, LiquidGlassFilter } from "@zakisheriff/liquid-glass";
 
 // Official YouTube Brand Icon (Red play shape + white triangle)
 const YouTubeIcon = ({ size }) => (
@@ -110,6 +111,31 @@ const CoffeeIcon = () => (
   </svg>
 );
 
+function CustomGlassInputCard({ children, className, style: externalStyle, ...props }) {
+  const { style: glassStyle } = useGlassEffect({
+    intensity: 6,
+    shimmer: true,
+    thickness: 1
+  });
+
+  return (
+    <div
+      data-liquid-glass
+      style={{ ...glassStyle, ...externalStyle }}
+      className={`${className} lg-root lg-card`}
+      {...props}
+    >
+      <div className="lg-backdrop-surface" aria-hidden="true" />
+      <div className="lg-shadow" aria-hidden="true" />
+      <div className="lg-surface">
+        <div className={`${styles.inputCardContent} lg-content`}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const supportedApps = [
   { label: "YouTube", icon: YouTubeIcon, size: 18 },
   { label: "Instagram", icon: InstagramIcon, size: 18 },
@@ -161,7 +187,8 @@ export default function HeroSection() {
   const handleClear = () => setInput("");
 
   return (
-    <section className={styles.hero}>
+    <LiquidGlassFilter>
+      <section className={styles.hero}>
       {/* Top nav bar on the landing page */}
       <nav className={styles.topNav}>
         <div className={styles.topNavActions}>
@@ -183,7 +210,7 @@ export default function HeroSection() {
       <div className={styles.content}>
         <h1 className={styles.title}>Paste the link.</h1>
 
-        <div className={styles.inputCard} onClick={handleContainerClick}>
+        <CustomGlassInputCard className={styles.inputCard} onClick={handleContainerClick}>
           <div className={styles.inputWrap}>
             <input
               ref={inputRef}
@@ -194,41 +221,59 @@ export default function HeroSection() {
             />
             {input ? (
               <>
-                <button
+                <GlassButton
                   className={styles.iconBtn}
                   onClick={handleCopy}
                   title={copied ? "Copied!" : "Copy link"}
                   aria-label="Copy link"
                   type="button"
+                  variant="ghost"
+                  intensity={4}
+                  size="sm"
+                  style={{ minWidth: "32px", width: "32px", height: "32px", borderRadius: "50%", padding: 0 }}
                 >
                   {copied ? <Check size={14} /> : <Copy size={14} />}
-                </button>
-                <button
+                </GlassButton>
+                <GlassButton
                   className={styles.iconBtn}
                   onClick={handleClear}
                   title="Clear"
                   aria-label="Clear input"
                   type="button"
+                  variant="ghost"
+                  intensity={4}
+                  size="sm"
+                  style={{ minWidth: "32px", width: "32px", height: "32px", borderRadius: "50%", padding: 0 }}
                 >
                   <X size={14} />
-                </button>
+                </GlassButton>
               </>
             ) : (
-              <button
+              <GlassButton
                 className={styles.iconBtn}
                 onClick={handlePaste}
                 title="Paste from clipboard"
                 aria-label="Paste from clipboard"
                 type="button"
+                variant="ghost"
+                intensity={4}
+                size="sm"
+                style={{ minWidth: "32px", width: "32px", height: "32px", borderRadius: "50%", padding: 0 }}
               >
                 <Clipboard size={14} />
-              </button>
+              </GlassButton>
             )}
           </div>
-          <button onClick={handleStart} style={{ fontWeight: 700 }} disabled={!input.trim()} className={styles.startBtn}>
+          <GlassButton
+            onClick={handleStart}
+            disabled={!input.trim()}
+            className={styles.startBtn}
+            size="lg"
+            intensity={6}
+          >
             Find media
-          </button>
-        </div>
+          </GlassButton>
+        </CustomGlassInputCard>
 
         <div className={styles.appRow} aria-label="Supported platforms">
           {supportedApps.map((app) => {
@@ -243,6 +288,7 @@ export default function HeroSection() {
           <DepthModeToggle variant="inline" />
         </div>
       </div>
-    </section>
+      </section>
+    </LiquidGlassFilter>
   );
 }

@@ -33,38 +33,26 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid rgba(12, 12, 12, 0.08);
-  background: rgba(255, 255, 255, 0.88);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   color: var(--muted);
   cursor: pointer;
   transform: translateY(0);
-  box-shadow:
-    0 2px 0 rgba(12, 12, 12, 0.12),
-    0 4px 8px rgba(14, 16, 20, 0.04);
   transition:
     transform 0.1s ease,
-    box-shadow 0.1s ease,
-    background-color 0.1s ease,
     color 0.1s ease;
+  --glass-surface-background: transparent !important;
+  --glass-tint: transparent !important;
 }
 
 .iconBtn:hover {
-  background: #ffffff;
   color: var(--text);
   transform: translateY(-1px);
-  box-shadow:
-    0 3px 0 rgba(12, 12, 12, 0.12),
-    0 6px 12px rgba(14, 16, 20, 0.06);
 }
 
 .iconBtn:active {
-  transform: translateY(2px);
-  box-shadow:
-    0 0 0 rgba(12, 12, 12, 0.12),
-    inset 0 1.5px 3px rgba(0, 0, 0, 0.16);
+  transform: translateY(1px);
 }
 
 
@@ -85,24 +73,16 @@
 }
 
 .inputCard {
+  cursor: text;
+  --glass-padding: 14px;
+}
+
+.inputCardContent {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
   padding: 14px;
-  border-radius: 35px;
-  background: rgba(255, 255, 255, 0.76);
-  border: 1px solid rgba(12, 12, 12, 0.08);
-  box-shadow: var(--surface-soft-shadow);
-  backdrop-filter: blur(18px);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-  cursor: text;
   align-items: center;
-}
-
-.inputCard:focus-within {
-  background: rgba(255, 255, 255, 0.88);
-  border-color: rgba(12, 12, 12, 0.2);
-  box-shadow: var(--surface-soft-shadow-strong);
 }
 
 .inputWrap {
@@ -336,9 +316,20 @@
   box-shadow: none;
 }
 
-:global(html[data-depth-mode="flat"]) .inputCard:focus-within {
-  box-shadow: 0 0 0 3px rgba(12, 12, 12, 0.05);
+.inputCard:focus,
+.inputCard:focus-within,
+.inputCardContent:focus,
+.inputCardContent:focus-within,
+.inputWrap:focus,
+.inputWrap:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
 }
+
+:global(html[data-depth-mode="flat"]) .inputCard:focus-within {
+  box-shadow: none;
+}
+
 
 :global(html[data-depth-mode="flat"]) .iconBtn,
 :global(html[data-depth-mode="flat"]) .sourceBadge {
@@ -382,41 +373,19 @@
   }
 
   .inputCard {
-    grid-template-columns: 1fr;
-    padding: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    backdrop-filter: none;
-    gap: 12px;
+    --glass-padding: 12px;
   }
 
-  .inputCard:focus-within {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
+  .inputCardContent {
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 12px;
   }
 
   .inputWrap {
     width: 100%;
-    min-height: 58px;
-    padding: 0 20px;
-    background: rgba(255, 255, 255, 0.76);
-    border: 1px solid rgba(12, 12, 12, 0.08);
-    border-radius: 35px;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.94),
-      0 8px 24px rgba(14, 16, 20, 0.06);
-    backdrop-filter: blur(18px);
-  }
-
-  .inputCard:focus-within .inputWrap {
-    background: rgba(255, 255, 255, 0.88);
-    border-color: rgba(12, 12, 12, 0.2);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.96),
-      0 0 0 3px rgba(12, 12, 12, 0.04),
-      0 8px 24px rgba(14, 16, 20, 0.08);
+    min-height: 52px;
+    padding: 0 10px;
   }
 
   .primaryButton {

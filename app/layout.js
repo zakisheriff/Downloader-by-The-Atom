@@ -4,6 +4,7 @@ import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 import { DepthModeProvider } from "@/components/providers/DepthModeProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { Analytics } from "@vercel/analytics/next";
+import "@zakisheriff/liquid-glass/styles.css";
 
 const siteUrl = "https://downloader.theatom.lk";
 const siteTitle = "Downloader by The Atom — Free YouTube, Instagram & TikTok Video Downloader";

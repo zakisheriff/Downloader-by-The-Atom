@@ -111,7 +111,7 @@
 .iconBtn,
 .appBadge,
 .inputCard,
-.inputCard > button {
+.startBtn {
   transition:
     transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
     box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
@@ -173,29 +173,17 @@
 }
 
 .inputCard {
+  width: min(880px, 100%);
+  cursor: text;
+  --glass-padding: 14px;
+}
+
+.inputCardContent {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
   padding: 14px;
-  border-radius: 35px;
-  width: min(880px, 100%);
-  background: rgba(255, 255, 255, 0.76);
-  border: 1px solid rgba(12, 12, 12, 0.08);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.94),
-    0 16px 48px rgba(14, 16, 20, 0.08);
-  backdrop-filter: blur(18px);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-  cursor: text;
-}
-
-.inputCard:focus-within {
-  background: rgba(255, 255, 255, 0.88);
-  border-color: rgba(12, 12, 12, 0.2);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.96),
-    0 0 0 3px rgba(12, 12, 12, 0.04),
-    0 16px 48px rgba(14, 16, 20, 0.12);
+  align-items: center;
 }
 
 .inputWrap {
@@ -227,42 +215,31 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(12, 12, 12, 0.08);
-  background: rgba(255, 255, 255, 0.88);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   color: var(--muted);
   cursor: pointer;
   transform: translateY(0);
-  box-shadow:
-    0 2px 0 rgba(12, 12, 12, 0.12),
-    0 4px 8px rgba(14, 16, 20, 0.04);
   transition:
     transform 0.1s ease,
-    box-shadow 0.1s ease,
-    background-color 0.1s ease,
     color 0.1s ease;
+  --glass-surface-background: transparent !important;
+  --glass-tint: transparent !important;
 }
 
 .iconBtn:hover {
-  background: #ffffff;
   color: var(--text);
   transform: translateY(-1px);
-  box-shadow:
-    0 3px 0 rgba(12, 12, 12, 0.12),
-    0 6px 12px rgba(14, 16, 20, 0.06);
 }
 
 .iconBtn:active {
-  transform: translateY(2px);
-  box-shadow:
-    0 0 0 rgba(12, 12, 12, 0.12),
-    inset 0 1.5px 3px rgba(0, 0, 0, 0.16);
+  transform: translateY(1px);
 }
 
 
-.inputCard > button {
+.startBtn {
+  font-weight: 700;
   min-height: 68px;
   min-width: 250px;
   display: inline-flex;
@@ -317,24 +294,20 @@
   border-color: rgba(12, 12, 12, 0.06);
 }
 
+.inputCard:focus,
+.inputCard:focus-within,
+.inputCardContent:focus,
+.inputCardContent:focus-within,
+.inputWrap:focus,
+.inputWrap:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 :global(html[data-depth-mode="flat"]) .inputCard:focus-within {
-  box-shadow: 0 0 0 3px rgba(12, 12, 12, 0.05);
-}
-
-:global(html[data-depth-mode="flat"]) .inputCard > button {
-  background: #111111;
-  box-shadow: none;
-  text-shadow: none;
-}
-
-:global(html[data-depth-mode="flat"]) .inputCard > button:hover {
-  box-shadow: 0 12px 24px rgba(17, 17, 17, 0.1);
-  transform: translateY(-1px);
-}
-
-:global(html[data-depth-mode="flat"]) .inputCard > button:active {
   box-shadow: none;
 }
+
 
 :global(html[data-depth-mode="flat"]) .iconBtn,
 :global(html[data-depth-mode="flat"]) .appBadge {
@@ -402,44 +375,22 @@
   }
 
   .inputCard {
-    grid-template-columns: 1fr;
-    padding: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    backdrop-filter: none;
-    gap: 12px;
+    --glass-padding: 12px;
   }
 
-  .inputCard:focus-within {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
+  .inputCardContent {
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 12px;
   }
 
   .inputWrap {
     width: 100%;
-    min-height: 58px;
-    padding: 0 20px;
-    background: rgba(255, 255, 255, 0.76);
-    border: 1px solid rgba(12, 12, 12, 0.08);
-    border-radius: 35px;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.94),
-      0 8px 24px rgba(14, 16, 20, 0.06);
-    backdrop-filter: blur(18px);
+    min-height: 52px;
+    padding: 0 10px;
   }
 
-  .inputCard:focus-within .inputWrap {
-    background: rgba(255, 255, 255, 0.88);
-    border-color: rgba(12, 12, 12, 0.2);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.96),
-      0 0 0 3px rgba(12, 12, 12, 0.04),
-      0 8px 24px rgba(14, 16, 20, 0.08);
-  }
-
-  .inputCard > button {
+  .startBtn {
     width: 100%;
     min-height: 58px;
     min-width: 0;
@@ -463,7 +414,7 @@
   .iconBtn,
   .appBadge,
   .inputCard,
-  .inputCard > button {
+  .startBtn {
     transition: none;
   }
 }

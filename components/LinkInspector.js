@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Clipboard, Copy, Link2, LoaderCircle, X } from "lucide-react";
+import { useGlassEffect, GlassButton, LiquidGlassFilter } from "@zakisheriff/liquid-glass";
 import EmptyState from "@/components/EmptyState";
 import FormatCard from "@/components/FormatCard";
 import GlassCard from "@/components/GlassCard";
@@ -22,6 +23,31 @@ async function getJson(url) {
   }
 
   return data;
+}
+
+function CustomGlassInputCard({ children, className, style: externalStyle, ...props }) {
+  const { style: glassStyle } = useGlassEffect({
+    intensity: 6,
+    shimmer: true,
+    thickness: 1
+  });
+
+  return (
+    <div
+      data-liquid-glass
+      style={{ ...glassStyle, ...externalStyle }}
+      className={`${className} lg-root lg-card`}
+      {...props}
+    >
+      <div className="lg-backdrop-surface" aria-hidden="true" />
+      <div className="lg-shadow" aria-hidden="true" />
+      <div className="lg-surface">
+        <div className={`${styles.inputCardContent} lg-content`}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const PLATFORMS = {
@@ -233,10 +259,11 @@ export default function LinkInspector() {
   };
 
   return (
-    <div className={styles.page}>
+    <LiquidGlassFilter>
+      <div className={styles.page}>
       <GlassCard className={styles.hero}>
         <p className={styles.inputHeading}>Paste the link.</p>
-        <div className={styles.inputCard} onClick={handleContainerClick}>
+        <CustomGlassInputCard className={styles.inputCard} onClick={handleContainerClick}>
           <div className={styles.inputWrap}>
             <Link2 size={18} />
             <input
@@ -248,42 +275,60 @@ export default function LinkInspector() {
             />
             {input ? (
               <>
-                <button
+                <GlassButton
                   className={styles.iconBtn}
                   onClick={handleCopy}
                   title={copied ? "Copied!" : "Copy link"}
                   aria-label="Copy link"
                   type="button"
+                  variant="ghost"
+                  intensity={4}
+                  size="sm"
+                  style={{ minWidth: "30px", width: "30px", height: "30px", borderRadius: "50%", padding: 0 }}
                 >
                   {copied ? <Check size={15} /> : <Copy size={15} />}
-                </button>
-                <button
+                </GlassButton>
+                <GlassButton
                   className={styles.iconBtn}
                   onClick={handleClear}
                   title="Clear"
                   aria-label="Clear input"
                   type="button"
+                  variant="ghost"
+                  intensity={4}
+                  size="sm"
+                  style={{ minWidth: "30px", width: "30px", height: "30px", borderRadius: "50%", padding: 0 }}
                 >
                   <X size={15} />
-                </button>
+                </GlassButton>
               </>
             ) : (
-              <button
+              <GlassButton
                 className={styles.iconBtn}
                 onClick={handlePaste}
                 title="Paste from clipboard"
                 aria-label="Paste from clipboard"
                 type="button"
+                variant="ghost"
+                intensity={4}
+                size="sm"
+                style={{ minWidth: "30px", width: "30px", height: "30px", borderRadius: "50%", padding: 0 }}
               >
                 <Clipboard size={15} />
-              </button>
+              </GlassButton>
             )}
           </div>
-          <button className={styles.primaryButton} onClick={handleInspect}>
+          <GlassButton
+            className={styles.primaryButton}
+            onClick={handleInspect}
+            size="lg"
+            intensity={6}
+            disabled={loading}
+          >
             <span>{loading ? "Inspecting" : "Find media"}</span>
             {loading ? <LoaderCircle size={18} className={styles.spin} /> : ""}
-          </button>
-        </div>
+          </GlassButton>
+        </CustomGlassInputCard>
       </GlassCard>
 
       {loading ? (
@@ -438,6 +483,7 @@ export default function LinkInspector() {
           description="Paste a public media link above and the available formats will appear here."
         />
       ) : null}
-    </div>
+      </div>
+    </LiquidGlassFilter>
   );
 }
