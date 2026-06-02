@@ -366,6 +366,14 @@ function estimateSizeBytes(format, durationSeconds = 0) {
   return 0;
 }
 
+function getResolutionSuffix(height) {
+  if (height >= 2160) return " (4K)";
+  if (height >= 1440) return " (2K)";
+  if (height >= 1080) return " (Full HD)";
+  if (height >= 720) return " (HD)";
+  return "";
+}
+
 function buildVideoGroups(formats = [], durationSeconds = 0) {
   const bestPerVariant = new Map();
 
@@ -406,7 +414,7 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
       needsRecode,
       ext: normalizeExt(format.ext, "mp4"),
       container,
-      label: resolution,
+      label: format.height ? `${format.height}p${getResolutionSuffix(format.height)}` : format.format_note || "Video",
       note,
       qualityValue: format.height || 0,
       sizeBytes,
