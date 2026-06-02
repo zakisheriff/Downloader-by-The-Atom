@@ -622,9 +622,13 @@ export async function inspectMedia(sourceUrl) {
       continue;
     }
 
-    console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient})`);
+    const isAnonymous = !attempt.useCookies;
+    const socketTimeout = isAnonymous ? "4" : "8";
+    const execTimeout = isAnonymous ? 5000 : 10000;
+
+    console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient}, Timeout: ${execTimeout}ms)`);
     
-    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node", "--socket-timeout", "10"];
+    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node", "--socket-timeout", socketTimeout];
     if (attempt.usePlayerClient) {
       args.push("--extractor-args", "youtube:player-client=web,mweb,android");
     }
@@ -633,7 +637,7 @@ export async function inspectMedia(sourceUrl) {
     try {
       const result = await execFileAsync(YT_DLP_BIN, args, { 
         maxBuffer: 20 * 1024 * 1024,
-        timeout: 12000 // 12 seconds hard execution timeout
+        timeout: execTimeout
       });
       stdout = result.stdout;
       stderr = result.stderr;
@@ -672,7 +676,22 @@ export async function inspectMedia(sourceUrl) {
   }
 
   if (!stdout) {
-    throw createYtError(lastError?.stderr?.trim() || lastError?.message || "This link could not be inspected right now.", 400);
+    const errText = lastError?.stderr?.trim() || lastError?.message || "This link could not be inspected right now.";
+    if (isYouTube) {
+      const hasCookies = await hasCookiesConfigured();
+      if (!hasCookies) {
+        throw createYtError(
+          "YouTube link inspection failed. The server's IP address is currently blocked/rate-limited by YouTube because no cookies are configured. Please export fresh YouTube cookies and add them to the YT_DLP_COOKIES_BASE64 environment variable in your Hugging Face Space settings to bypass this block.",
+          403
+        );
+      } else {
+        throw createYtError(
+          "YouTube link inspection failed. The server's IP is blocked by YouTube, and the configured cookies may have expired or are invalid. Please update/renew your YouTube cookies (YT_DLP_COOKIES_BASE64 env var) in your Hugging Face Space settings.",
+          403
+        );
+      }
+    }
+    throw createYtError(errText, 400);
   }
 
   try {
