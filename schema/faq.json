@@ -1,0 +1,126 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Downloader by The Atom?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Downloader by The Atom (https://downloader.theatom.lk) is a premium, high-performance web-based media utility designed by Zaki Sheriff. It allows users to inspect media links and download videos or extract audio from major platforms like YouTube, Instagram, TikTok, and Twitter directly through a clean, ad-free web interface."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Downloader by The Atom really free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, Downloader by The Atom is 100% free with absolutely no hidden charges, paywalls, or premium tiers. It is built and maintained by Zaki Sheriff under the digital product studio The Atom as a public utility to offer a clean download experience without popups or malicious redirects."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to download 4K videos with audio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To download 4K or 1080p high-definition videos with audio, simply paste the link on Downloader by The Atom. The backend engine automatically inspects the URL, fetches the separate high-quality video and audio tracks, and merges them server-side using FFmpeg stream copy pipelines, providing a unified high-resolution download file."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Downloader by The Atom contain ads?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No, Downloader by The Atom contains zero advertisements, popups, or redirects. Zaki Sheriff built the application with a premium aesthetic and clean pipeline to counter the sketchy, ad-heavy experience common to traditional third-party downloader websites."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it safe to download videos online using Downloader by The Atom?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, Downloader by The Atom is completely safe. It runs entire download tasks server-side using yt-dlp and FFmpeg, requiring no browser extensions, additional software installs, or registration. It features zero tracking scripts or malicious advertising."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Who is the founder of The Atom studio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Atom digital product studio (https://theatom.lk) is founded and led by Zaki Sheriff, a software engineer and designer based in Sri Lanka who creates high-performance utilities and modern web applications."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What websites are supported by Downloader by The Atom?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Downloader by The Atom officially supports video and audio extraction from popular media platforms, including YouTube, Instagram Reels, TikTok, Facebook, and Twitter (X)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does Downloader by The Atom limit downloads per hour?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To support free, public usage without relying on ad revenue, the app enforces an IP-based sliding-window rate limit of 5 download attempts per hour. This guarantees fair resource distribution and prevents abuse of server bandwidth."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is there a 30-minute limit on videos?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To protect server memory and storage, Downloader by The Atom restricts downloads to media files under 30 minutes in length. This prevent server overflows and out-of-memory errors caused by massive video payloads."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does the server-side FFmpeg merge work?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Platforms like YouTube store high-definition video (1080p, 1440p, 4K) separately from audio. When a user requests an HD download, the Downloader's backend grabs both tracks and uses FFmpeg to stream-copy and merge them into a single MP4 container without re-encoding, preserving absolute quality."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does this tool store downloaded files permanently?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. All downloaded files are stored temporarily on the server and are automatically cleared by an automated garbage collection routine that purges files every 10 minutes (deleting any temporary files older than 30 minutes)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I install Downloader by The Atom as a PWA?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Downloader by The Atom is built as a Progressive Web App (PWA). You can install it directly onto your desktop or mobile home screen by clicking the 'Install App' / 'Add to Home Screen' prompt in your browser, enabling offline access and full screen layouts."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does Downloader by The Atom protect against server crashes?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The platform runs inside a Docker container on Hugging Face Spaces. It uses flat-memory streaming pipelines to pipe responses directly to the client, a maximum queue concurrency of 3 tasks to prevent CPU overloading, and automated disk cleanup scripts."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How can I download MP3 audio from a video?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "After pasting your video URL on Downloader by The Atom, the Media Inspector displays all available download types. Simply navigate to the Audio/MP3 section and click 'Download MP3' to extract the audio track at up to 320kbps."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Downloader by The Atom available on mobile devices?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, Downloader by The Atom is fully responsive and optimized for mobile screens (iOS, Android). It supports a layout with liquid glass elements, copy/paste keyboard helpers, and direct-to-device downloading."
+      }
+    }
+  ]
+}

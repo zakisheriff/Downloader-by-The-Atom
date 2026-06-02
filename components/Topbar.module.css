@@ -150,6 +150,20 @@
   opacity: 0.8;
 }
 
+.coffeeBtnGlass {
+  --glass-surface-background: rgba(245, 200, 66, 0.9) !important;
+  --glass-tint: rgba(212, 150, 10, 0.15) !important;
+  color: #3d2000 !important;
+  font-weight: 700 !important;
+  white-space: nowrap;
+  border-radius: 35px !important;
+}
+
+.coffeeBtnGlass svg {
+  color: #3d2000 !important;
+  opacity: 0.85;
+}
+
 @media (max-width: 960px) {
   .mobileMenuButton {
     display: inline-grid;
@@ -172,16 +186,20 @@
   }
 
   .coffeeBtn span,
+  .coffeeBtnGlass span,
   .navLink {
-    display: none;
+    display: none !important;
   }
 
-  .coffeeBtn {
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    justify-content: center;
-    gap: 0;
+  .coffeeBtn,
+  .coffeeBtnGlass {
+    min-width: 40px !important;
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    border-radius: 50% !important;
   }
 }
 

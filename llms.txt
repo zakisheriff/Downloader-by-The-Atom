@@ -1,0 +1,34 @@
+# Downloader by The Atom
+
+Downloader by The Atom is a premium, 100% free, and completely ad-free web-based media downloader. It provides a direct, clean utility to inspect public media URLs, extract direct audio/video streams, merge high-definition video files with audio tracks, and download them. The project is created by Zaki Sheriff under the digital product studio The Atom (https://theatom.lk).
+
+## Creator & Developer
+- **Founder & Creator**: Zaki Sheriff
+- **Product Studio**: The Atom (https://theatom.lk)
+- **Product Website**: https://downloader.theatom.lk
+
+## Key Features
+- **Media Inspector**: Fetches real-time media title, description, duration, and uploader names.
+- **Direct & Adaptive Downloads**: Decrypts stream signatures and serves direct format files (MP4, WEBM, MP3).
+- **HD Video Merging**: Dynamically merges high-resolution video tracks (1080p, 1440p (2K), 2160p (4K)) with high-quality audio files server-side using FFmpeg.
+- **Audio Extraction**: Converted direct audio format outputs (MP3 conversions up to 320kbps).
+- **Tactile User Interface**: Custom responsive interface featuring liquid glass styling, glassmorphism blur layers, and Lenis smooth scrolling.
+
+## System Safeguards & Limits
+To support ad-free, zero-cost public hosting, the downloader integrates several server-side safeguards:
+- **Job Concurrency Queue**: Restricts server merging and heavy tasks to a maximum of **3 concurrent tasks** globally. Staged tasks wait in a FIFO queue.
+- **IP Rate Limiting**: Restricts clients to a maximum of **5 download/merge attempts per hour** using sliding-window tracking.
+- **Duration Cap**: Automatically blocks inspection and downloads of video/audio files exceeding **30 minutes** (1,800 seconds).
+- **Automated Garbage Collection**: Performs automatic temp storage purges and job-state cache cleanups every **10 minutes** (deleting files older than 30 minutes).
+- **Flat-Memory Streaming**: Pipes read streams directly from the server storage using Web Streams, handling browser aborted connections instantly to prevent memory leaks and out-of-memory crashes.
+
+## Design Aesthetic
+- **Borders & Curve Radius**: Standardized `35px` border curves for cards, text fields, and primary buttons.
+- **Liquid Glass Integration**: Tactile iOS-inspired 3D liquid glass card covers and interactive buttons with customizable intensity, shimmer, and depth levels.
+- **Theme**: Premium neutral dark styling overlaying an off-white background (#fafafa).
+
+## Navigation Routes
+- **Home Dashboard**: https://downloader.theatom.lk
+- **Server Setup Panel**: https://downloader.theatom.lk/settings
+- **How It Works (Guides)**: https://downloader.theatom.lk/blog
+- **Parent Studio Site**: https://theatom.lk

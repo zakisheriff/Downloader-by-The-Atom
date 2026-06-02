@@ -1,19 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Download, SlidersHorizontal, BookOpen, X, Coffee } from "lucide-react";
-import DepthModeToggle from "@/components/DepthModeToggle";
+import { GlassButton } from "@zakisheriff/liquid-glass";
 import styles from "@/components/Sidebar.module.css";
 
 const navigation = [
   { label: "Downloader", href: "/dashboard", icon: Download },
   { label: "How it works", href: "/blog", icon: BookOpen },
-
 ];
 
 export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const content = (
     <div className={styles.sidebar}>
@@ -40,29 +40,47 @@ export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
             pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
-            <Link
+            <GlassButton
               key={item.href}
-              href={item.href}
-              className={`${styles.link} ${active ? styles.active : ""}`}
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose?.();
+                router.push(item.href);
+              }}
+              size="lg"
+              variant={active ? "default" : "ghost"}
+              intensity={active ? 6 : 2}
+              className={`${styles.linkGlass} ${active ? styles.active : ""}`}
+              style={{
+                width: "100%",
+                justifyContent: "flex-start",
+                gap: "12px"
+              }}
             >
               <Icon size={18} />
               <span className={styles.linkLabel}>{item.label}</span>
-            </Link>
+            </GlassButton>
           );
         })}
-        <DepthModeToggle variant="sidebar" />
-        <a
-          href="https://buymeacoffee.com/theoneatom"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.coffeeLink}
-          onClick={onClose}
+        <GlassButton
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose?.();
+            window.open("https://buymeacoffee.com/theoneatom", "_blank", "noopener,noreferrer");
+          }}
+          size="lg"
+          intensity={6}
+          className={styles.coffeeLinkGlass}
+          style={{
+            width: "100%",
+            justifyContent: "flex-start",
+            gap: "12px"
+          }}
           aria-label="Buy The Atom a coffee"
         >
           <Coffee size={16} />
           <span className={styles.linkLabel}>Buy me a coffee</span>
-        </a>
+        </GlassButton>
       </nav>
 
       

@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Clipboard, Copy, Link2, X } from "lucide-react";
-import DepthModeToggle from "@/components/DepthModeToggle";
 import styles from "@/components/HeroSection.module.css";
 import { useGlassEffect, GlassButton, LiquidGlassFilter } from "@zakisheriff/liquid-glass";
 
@@ -191,17 +190,30 @@ export default function HeroSection() {
       {/* Top nav bar on the landing page */}
       <nav className={styles.topNav}>
         <div className={styles.topNavActions}>
-          <Link href="/blog" className={styles.topNavLink}>How it works</Link>
-          <a
-            href="https://buymeacoffee.com/theoneatom"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.topNavCoffee}
+          <GlassButton
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push("/blog");
+            }}
+            size="md"
+            intensity={6}
+            className={styles.topNavLinkGlass}
+          >
+            How it works
+          </GlassButton>
+          <GlassButton
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open("https://buymeacoffee.com/theoneatom", "_blank", "noopener,noreferrer");
+            }}
+            size="md"
+            intensity={6}
+            className={styles.topNavCoffeeGlass}
             aria-label="Buy The Atom a coffee"
           >
             <CoffeeIcon />
-            <span>Support</span>
-          </a>
+            <span className={styles.coffeeText}>Support</span>
+          </GlassButton>
         </div>
       </nav>
 
@@ -291,12 +303,23 @@ export default function HeroSection() {
             const Icon = app.icon;
 
             return (
-              <div key={app.label} className={styles.appBadge} title={app.label}>
+              <GlassButton
+                key={app.label}
+                className={styles.appBadge}
+                title={app.label}
+                intensity={4}
+                style={{
+                  padding: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%"
+                }}
+              >
                 {Icon ? <Icon size={app.size} /> : null}
-              </div>
+              </GlassButton>
             );
           })}
-          <DepthModeToggle variant="inline" />
         </div>
       </div>
       </section>

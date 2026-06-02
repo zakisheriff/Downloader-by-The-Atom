@@ -85,6 +85,43 @@
   color: #f5a623;
 }
 
+.linkGlass {
+  color: var(--muted) !important;
+  font-weight: 500 !important;
+  border-radius: 35px !important;
+}
+
+.linkGlass:hover {
+  color: var(--text) !important;
+}
+
+.linkGlass.active {
+  color: var(--text) !important;
+  font-weight: 600 !important;
+}
+
+.linkGlass svg {
+  color: var(--muted) !important;
+}
+
+.linkGlass:hover svg,
+.linkGlass.active svg {
+  color: var(--text) !important;
+}
+
+.coffeeLinkGlass {
+  --glass-surface-background: rgba(245, 200, 66, 0.88) !important;
+  --glass-tint: rgba(212, 150, 10, 0.15) !important;
+  color: #3d2000 !important;
+  font-weight: 700 !important;
+  border-radius: 35px !important;
+}
+
+.coffeeLinkGlass svg {
+  color: #3d2000 !important;
+  opacity: 0.85;
+}
+
 .logoRow {
   display: flex;
   justify-content: space-between;

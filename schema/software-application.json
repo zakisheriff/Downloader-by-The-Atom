@@ -1,0 +1,45 @@
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Downloader by The Atom",
+  "alternateName": [
+    "Downloader",
+    "The Atom Downloader",
+    "Free Media Downloader",
+    "Video Downloader Sri Lanka"
+  ],
+  "description": "A premium, 100% free, and ad-free high-performance media downloader. Download videos from YouTube in 4K, Instagram Reels, TikTok clips, and extract MP3 audio files safely.",
+  "applicationCategory": "MultimediaApplication, UtilityApplication",
+  "operatingSystem": "Web, Windows, macOS, Linux, iOS, Android",
+  "author": {
+    "@type": "Person",
+    "name": "Zaki Sheriff",
+    "url": "https://theatom.lk"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "The Atom",
+    "url": "https://theatom.lk"
+  },
+  "genre": [
+    "Utility",
+    "Media Downloader",
+    "Video Converter",
+    "Audio Extractor"
+  ],
+  "offers": {
+    "@type": "Offer",
+    "price": "0.00",
+    "priceCurrency": "USD",
+    "category": "Free"
+  },
+  "featureList": [
+    "High-definition video merging (1080p, 1440p, 4K) using FFmpeg stream copying",
+    "Ad-free direct web-based download pipeline",
+    "Advanced audio extraction and MP3 conversion up to 320kbps",
+    "Multi-platform support for YouTube, Instagram, TikTok, Facebook, and X",
+    "Real-time progress and queue position status monitoring"
+  ],
+  "downloadUrl": "https://downloader.theatom.lk",
+  "softwareVersion": "1.0.0"
+}

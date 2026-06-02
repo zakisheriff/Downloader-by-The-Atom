@@ -106,6 +106,30 @@
   opacity: 0.85;
 }
 
+.topNavLinkGlass {
+  font-weight: 600 !important;
+  white-space: nowrap;
+  border-radius: 35px !important;
+}
+
+.topNavCoffeeGlass {
+  --glass-surface-background: rgba(245, 200, 66, 0.9) !important;
+  --glass-tint: rgba(212, 150, 10, 0.15) !important;
+  color: #3d2000 !important;
+  font-weight: 700 !important;
+  white-space: nowrap;
+  border-radius: 35px !important;
+}
+
+.topNavCoffeeGlass svg {
+  color: #3d2000 !important;
+  opacity: 0.85;
+}
+
+.coffeeText {
+  display: inline;
+}
+
 .topNavLink,
 .topNavCoffee,
 .iconBtn,
@@ -260,22 +284,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(12, 12, 12, 0.08);
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  max-width: 42px !important;
+  border-radius: 50% !important;
   color: var(--text);
-  transform: translateY(0);
-  box-shadow:
-    0 3px 0 rgba(12, 12, 12, 0.12),
-    0 6px 12px rgba(14, 16, 20, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  transition:
-    transform 0.15s cubic-bezier(0.3, 0.8, 0.4, 1),
-    box-shadow 0.15s cubic-bezier(0.3, 0.8, 0.4, 1),
-    background-color 0.15s ease;
-  cursor: default;
+}
+
+.appBadge,
+.appBadge:hover,
+.appBadge:active,
+.appBadge * {
+  cursor: default !important;
 }
 
 :global(html[data-depth-mode="flat"]) .topNavLink,
@@ -309,28 +330,9 @@
 }
 
 
-:global(html[data-depth-mode="flat"]) .iconBtn,
-:global(html[data-depth-mode="flat"]) .appBadge {
+:global(html[data-depth-mode="flat"]) .iconBtn {
   box-shadow: none;
   background: rgba(255, 255, 255, 0.78);
-}
-
-.appBadge:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(12, 12, 12, 0.14);
-  box-shadow:
-    0 3px 0 rgba(12, 12, 12, 0.1),
-    0 8px 16px rgba(14, 16, 20, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.appBadge:active {
-  transform: translateY(1px);
-  box-shadow:
-    0 1px 0 rgba(12, 12, 12, 0.12),
-    0 2px 4px rgba(14, 16, 20, 0.04),
-    inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 @media (max-width: 640px) {
@@ -348,21 +350,26 @@
   }
 
   /* Coffee button: icon-only on mobile */
-  .topNavCoffee span {
-    display: none;
+  .topNavCoffee span,
+  .coffeeText {
+    display: none !important;
   }
 
-  .topNavCoffee {
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    justify-content: center;
-    gap: 0;
+  .topNavCoffee,
+  .topNavCoffeeGlass {
+    min-width: 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    border-radius: 50% !important;
   }
 
-  .topNavLink {
-    padding: 9px 14px;
-    font-size: 0.82rem;
+  .topNavLink,
+  .topNavLinkGlass {
+    padding: 9px 14px !important;
+    font-size: 0.82rem !important;
   }
 
   .content {
@@ -402,9 +409,11 @@
   }
 
   .appBadge {
-    width: 36px;
-    height: 36px;
-    padding: 0;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    padding: 0 !important;
   }
 }
 

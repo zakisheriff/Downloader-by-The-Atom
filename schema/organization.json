@@ -1,0 +1,28 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://theatom.lk/#organization",
+  "name": "The Atom",
+  "url": "https://theatom.lk",
+  "logo": "https://downloader.theatom.lk/Logo.png",
+  "founder": {
+    "@type": "Person",
+    "@id": "https://theatom.lk/#person",
+    "name": "Zaki Sheriff",
+    "url": "https://theatom.lk"
+  },
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Colombo",
+    "addressCountry": "LK"
+  },
+  "description": "The Atom is a premium digital product studio founded by Zaki Sheriff, specializing in building high-performance, beautiful, and ad-free web experiences.",
+  "hasProduct": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://downloader.theatom.lk/#software",
+      "name": "Downloader by The Atom",
+      "url": "https://downloader.theatom.lk"
+    }
+  ]
+}

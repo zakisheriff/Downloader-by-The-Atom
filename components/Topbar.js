@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { GlassButton } from "@zakisheriff/liquid-glass";
 import styles from "@/components/Topbar.module.css";
 
 const titles = {
@@ -54,16 +55,19 @@ export default function Topbar({ onMenuOpen }) {
       </div>
 
       <nav className={styles.actions}>
-        <a
-          href="https://buymeacoffee.com/theoneatom"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.coffeeBtn}
+        <GlassButton
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open("https://buymeacoffee.com/theoneatom", "_blank", "noopener,noreferrer");
+          }}
+          size="md"
+          intensity={6}
+          className={styles.coffeeBtnGlass}
           aria-label="Buy The Atom a coffee"
         >
           <CoffeeIcon />
           <span>Buy me a coffee</span>
-        </a>
+        </GlassButton>
       </nav>
     </div>
   );

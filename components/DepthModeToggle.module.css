@@ -9,6 +9,11 @@
   backdrop-filter: blur(18px);
 }
 
+.toggleGlass {
+  border-radius: 35px !important;
+  color: var(--text) !important;
+}
+
 .floating {
   position: fixed;
   top: 20px;
