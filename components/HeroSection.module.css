@@ -121,8 +121,12 @@
   border-radius: 35px !important;
 }
 
-.topNavCoffeeGlass svg {
+.topNavCoffeeGlass,
+.topNavCoffeeGlass * {
   color: #3d2000 !important;
+}
+
+.topNavCoffeeGlass svg {
   opacity: 0.85;
 }
 
@@ -364,6 +368,17 @@
     justify-content: center !important;
     gap: 0 !important;
     border-radius: 50% !important;
+  }
+
+  .topNavCoffee :global(.lg-content),
+  .topNavCoffeeGlass :global(.lg-content) {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .topNavLink,

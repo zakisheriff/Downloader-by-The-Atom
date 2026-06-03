@@ -159,8 +159,12 @@
   border-radius: 35px !important;
 }
 
-.coffeeBtnGlass svg {
+.coffeeBtnGlass,
+.coffeeBtnGlass * {
   color: #3d2000 !important;
+}
+
+.coffeeBtnGlass svg {
   opacity: 0.85;
 }
 
@@ -200,6 +204,17 @@
     justify-content: center !important;
     gap: 0 !important;
     border-radius: 50% !important;
+  }
+
+  .coffeeBtn :global(.lg-content),
+  .coffeeBtnGlass :global(.lg-content) {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 
