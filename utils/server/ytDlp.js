@@ -603,9 +603,11 @@ export async function inspectMedia(sourceUrl) {
     if (hasCookies) {
       // 1. Forced Cookies, Default (High Quality)
       attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, Default" });
-      // 2. Anonymous, Default (High Quality Fallback)
+      // 2. Forced Cookies, Safe Fallback (Reliable Bot Bypass with Cookies)
+      attempts.push({ useCookies: true, usePlayerClient: true, name: "Forced Cookies, Safe Fallback" });
+      // 3. Anonymous, Default (High Quality Fallback)
       attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, Default" });
-      // 3. Anonymous, Safe Fallback (Low Quality, Bot Bypass)
+      // 4. Anonymous, Safe Fallback (Low Quality, Bot Bypass)
       attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
     } else {
       // 1. Anonymous, Default (High Quality)
@@ -850,8 +852,8 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
   const cookiesArg = await getCookiesArg(sourceUrl, hasCookies);
   const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
   
-  // Only use player-client fallback if no cookies are available.
-  if (cookiesArg.length === 0) {
+  const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
+  if (isYouTube) {
     args.push("--extractor-args", "youtube:player-client=web,mweb,android");
   }
   
@@ -1034,13 +1036,20 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
       await runDownload(true, false);
       downloadSucceeded = true;
     } catch (error) {
-      console.error("prepareDownloadFile: Prioritized forced cookies HQ attempt failed. Retrying anonymously...", error.message);
+      console.error("prepareDownloadFile: Prioritized forced cookies HQ attempt failed. Trying safe fallback with cookies...", error.message);
       lastDownloadError = error;
       try {
-        await runDownload(false, false);
+        await runDownload(true, true);
         downloadSucceeded = true;
-      } catch (retryError) {
-        lastDownloadError = retryError;
+      } catch (cookieFallbackError) {
+        console.error("prepareDownloadFile: Forced cookies safe fallback attempt failed. Retrying anonymously...", cookieFallbackError.message);
+        lastDownloadError = cookieFallbackError;
+        try {
+          await runDownload(false, false);
+          downloadSucceeded = true;
+        } catch (retryError) {
+          lastDownloadError = retryError;
+        }
       }
     }
   } else {
@@ -1057,8 +1066,15 @@ export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, down
             await runDownload(true, false);
             downloadSucceeded = true;
           } catch (retryError) {
-            console.error("prepareDownloadFile: Forced cookies HQ attempt failed:", retryError.message);
+            console.error("prepareDownloadFile: Forced cookies HQ attempt failed. Trying safe fallback with cookies...", retryError.message);
             lastDownloadError = retryError;
+            try {
+              await runDownload(true, true);
+              downloadSucceeded = true;
+            } catch (cookieFallbackError) {
+              console.error("prepareDownloadFile: Forced cookies safe fallback attempt failed:", cookieFallbackError.message);
+              lastDownloadError = cookieFallbackError;
+            }
           }
         }
       }
