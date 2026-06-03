@@ -259,3 +259,29 @@
 :global(html[data-depth-mode="flat"]) .desktopToggle:active {
   box-shadow: none;
 }
+
+.mobileMenuButtonGlass {
+  display: none !important;
+  color: var(--text) !important;
+  border-radius: 35px !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+}
+
+.mobileMenuButtonGlass :global(.lg-content) {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+@media (max-width: 960px) {
+  .mobileMenuButtonGlass {
+    display: inline-flex !important;
+  }
+}

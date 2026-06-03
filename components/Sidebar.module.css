@@ -233,6 +233,7 @@
 }
 
 .closeMobile,
+.closeMobileGlass,
 .backdrop,
 .collapseButton {
   display: none;
@@ -394,6 +395,26 @@
 
   .collapseButton {
     display: none;
+  }
+
+  .closeMobileGlass {
+    display: inline-flex !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    border-radius: 50% !important;
+    color: var(--text) !important;
+  }
+
+  .closeMobileGlass :global(.lg-content) {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 

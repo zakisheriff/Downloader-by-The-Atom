@@ -24,13 +24,24 @@ export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
             <small>downloader.theatom.lk</small>
           </div>
         </Link>
-        <button
-          className={styles.closeMobile}
-          onClick={onClose}
+        <GlassButton
+          className={styles.closeMobileGlass}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          size="md"
+          intensity={6}
           aria-label="Close menu"
+          style={{
+            width: "38px",
+            height: "38px",
+            borderRadius: "50%",
+            padding: 0
+          }}
         >
           <X size={18} />
-        </button>
+        </GlassButton>
       </div>
 
       <nav className={styles.nav}>

@@ -41,13 +41,24 @@ export default function Topbar({ onMenuOpen }) {
 
   return (
     <div className={styles.topbar}>
-      <button
-        className={styles.mobileMenuButton}
-        onClick={onMenuOpen}
+      <GlassButton
+        className={styles.mobileMenuButtonGlass}
+        onClick={(e) => {
+          e.stopPropagation();
+          onMenuOpen();
+        }}
+        size="md"
+        intensity={6}
         aria-label="Open menu"
+        style={{
+          width: "44px",
+          height: "44px",
+          borderRadius: "35px",
+          padding: 0
+        }}
       >
         <Menu size={18} />
-      </button>
+      </GlassButton>
 
       <div className={styles.titleBlock}>
         <strong>{current.title}</strong>
