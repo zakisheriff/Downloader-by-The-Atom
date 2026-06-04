@@ -727,18 +727,10 @@ export async function inspectMedia(sourceUrl) {
   if (!stdout) {
     const errText = lastError?.stderr?.trim() || lastError?.message || "This link could not be inspected right now.";
     if (isYouTube) {
-      const hasCookies = await hasCookiesConfigured();
-      if (!hasCookies) {
-        throw createYtError(
-          "YouTube link inspection failed. The server's IP address is currently blocked/rate-limited by YouTube because no cookies are configured. Please export fresh YouTube cookies and add them to the YT_DLP_COOKIES_BASE64 environment variable in your Hugging Face Space settings to bypass this block.",
-          403
-        );
-      } else {
-        throw createYtError(
-          "YouTube link inspection failed. The server's IP is blocked by YouTube, and the configured cookies may have expired or are invalid. Please update/renew your YouTube cookies (YT_DLP_COOKIES_BASE64 env var) in your Hugging Face Space settings.",
-          403
-        );
-      }
+      throw createYtError(
+        "YouTube is temporarily rate-limiting the server. We are automatically rotating our connection IP right now. Please wait 1–2 minutes and try pasting your link again.",
+        403
+      );
     }
     throw createYtError(errText, 400);
   }
