@@ -18,10 +18,15 @@ export async function GET(request) {
   try {
     const media = await inspectMedia(normalizeSourceUrl(sourceUrl));
     
-    // Hard-block any media longer than 30 minutes (1800 seconds)
-    if (media.durationSeconds > 1800) {
+    // Dynamically enforce duration limit (defaulting to 12 hours / 43200 seconds)
+    const maxDur = process.env.MAX_DURATION_SECONDS ? parseInt(process.env.MAX_DURATION_SECONDS, 10) : 43200;
+    if (media.durationSeconds > maxDur) {
+      const maxDurMinutes = Math.floor(maxDur / 60);
+      const limitLabel = maxDurMinutes >= 60 
+        ? `${(maxDurMinutes / 60).toFixed(1).replace(/\.0$/, "")} hours` 
+        : `${maxDurMinutes} minutes`;
       return NextResponse.json(
-        { error: "Media exceeds maximum duration of 30 minutes for the free tier." },
+        { error: `Media exceeds maximum duration of ${limitLabel} for the free tier.` },
         { status: 400 }
       );
     }

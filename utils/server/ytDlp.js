@@ -5,6 +5,7 @@ import { execFile, spawn } from "node:child_process";
 import { mkdir, readdir, rm, writeFile, readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
+import { jobManager } from "@/lib/JobQueue";
 import {
   formatBytes,
   formatDurationSeconds,
@@ -16,6 +17,35 @@ const execFileAsync = promisify(execFile);
 const YT_DLP_BIN = process.env.YT_DLP_BIN || "yt-dlp";
 const TMP_ROOT = path.join(os.tmpdir(), "fetch-by-the-atom");
 const ALLOW_YOUTUBE_ADAPTIVE = process.env.ALLOW_YOUTUBE_ADAPTIVE !== "false";
+
+// Track consecutive YouTube failures globally to trigger process exit / IP rotation if blocked.
+if (global.__consecutiveYoutubeFailures === undefined) {
+  global.__consecutiveYoutubeFailures = 0;
+}
+
+function incrementYoutubeFailures() {
+  global.__consecutiveYoutubeFailures++;
+  console.warn(`ytDlp: YouTube inspection failed. Consecutive failure count: ${global.__consecutiveYoutubeFailures}/3`);
+  
+  if (global.__consecutiveYoutubeFailures >= 3) {
+    if (jobManager.running.size === 0) {
+      console.warn("ytDlp: 3 consecutive YouTube failures detected and server is idle. Restarting process to rotate container IP...");
+      setTimeout(() => {
+        process.exit(1);
+      }, 1000);
+    } else {
+      console.warn(`ytDlp: 3 consecutive YouTube failures detected, but active downloads are running. Deferring restart until queue is empty.`);
+      global.__needsSelfRestart = true;
+    }
+  }
+}
+
+function resetYoutubeFailures() {
+  if (global.__consecutiveYoutubeFailures > 0) {
+    console.log(`ytDlp: YouTube inspection succeeded. Resetting consecutive failures from ${global.__consecutiveYoutubeFailures} to 0.`);
+    global.__consecutiveYoutubeFailures = 0;
+  }
+}
 
 // Persist across Next.js HMR hot-module reloads in dev.
 // In production this is just a regular Map on the module.
@@ -685,6 +715,14 @@ export async function inspectMedia(sourceUrl) {
     }
   }
 
+  if (isYouTube) {
+    if (stdout) {
+      resetYoutubeFailures();
+    } else {
+      incrementYoutubeFailures();
+    }
+  }
+
   if (!stdout) {
     const errText = lastError?.stderr?.trim() || lastError?.message || "This link could not be inspected right now.";
     if (isYouTube) {
@@ -1181,3 +1219,37 @@ export function createReadableStreamFromFile(filePath, onFinish) {
     }
   });
 }
+
+// Register a proactive canary connection checker to verify YouTube access.
+// If it fails twice consecutively, increment consecutive failures to trigger IP rotation.
+jobManager.registerCanaryChecker(async () => {
+  const checkOne = await runCanaryCheck();
+  if (checkOne) {
+    resetYoutubeFailures();
+    return;
+  }
+
+  console.warn("ytDlp: Proactive canary check failed. Retrying in 15 seconds to filter transient hiccups...");
+  await new Promise((resolve) => setTimeout(resolve, 15000));
+
+  const checkTwo = await runCanaryCheck();
+  if (checkTwo) {
+    resetYoutubeFailures();
+    return;
+  }
+
+  console.warn("ytDlp: Double proactive canary checks failed. Server IP block or invalid cookies detected.");
+  incrementYoutubeFailures();
+});
+
+async function runCanaryCheck() {
+  try {
+    // Rick Astley - Never Gonna Give You Up (official stable video)
+    const result = await inspectMedia("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+    return Boolean(result && result.formats && result.formats.length > 0);
+  } catch (err) {
+    console.warn("ytDlp: Canary inspect attempt failed:", err.message);
+    return false;
+  }
+}
+
