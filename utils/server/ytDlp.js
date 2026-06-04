@@ -435,6 +435,7 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
       ? [resolution, fps, "Ready with audio"].filter(Boolean).join(" • ")
       : [resolution, fps, "Server merge required"].filter(Boolean).join(" • ");
     const sizeBytes = estimateSizeBytes(format, durationSeconds);
+    const labelBase = format.height ? `${format.height}p${getResolutionSuffix(format.height)}` : format.format_note || "Video";
     const option = {
       id: `video:${format.format_id}:${mode}`,
       selector: progressive ? format.format_id : `${format.format_id}+bestaudio/best`,
@@ -444,7 +445,7 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
       needsRecode,
       ext: normalizeExt(format.ext, "mp4"),
       container,
-      label: format.height ? `${format.height}p${getResolutionSuffix(format.height)}` : format.format_note || "Video",
+      label: progressive ? `${labelBase} (Recommended)` : labelBase,
       note,
       qualityValue: format.height || 0,
       sizeBytes,
