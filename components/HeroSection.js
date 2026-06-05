@@ -178,9 +178,7 @@ export default function HeroSection() {
       const trimmedText = (text || "").trim();
       if (trimmedText) {
         setInput(trimmedText);
-        if (isValidSourceUrl(trimmedText)) {
-          router.push(`/dashboard?url=${encodeURIComponent(trimmedText)}`);
-        }
+        router.push(`/dashboard?url=${encodeURIComponent(trimmedText)}`);
       }
     } catch (err) {
       console.error("Failed to read clipboard contents: ", err);

@@ -314,17 +314,9 @@ export default function LinkInspector() {
       const trimmedText = (text || "").trim();
       if (trimmedText) {
         setInput(trimmedText);
-        if (isValidSourceUrl(trimmedText)) {
-          const nextUrl = `/dashboard?url=${encodeURIComponent(trimmedText)}`;
-          router.replace(nextUrl);
-          inspectLink(trimmedText);
-        } else {
-          showToast({
-            title: "Invalid link",
-            description: "Pasted text is not a valid http or https URL.",
-            variant: "warning"
-          });
-        }
+        const nextUrl = `/dashboard?url=${encodeURIComponent(trimmedText)}`;
+        router.replace(nextUrl);
+        inspectLink(trimmedText);
       }
     } catch (err) {
       console.error("Failed to read clipboard contents: ", err);
