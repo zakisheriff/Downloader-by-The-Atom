@@ -1,11 +1,16 @@
 import os from "node:os";
 import path from "node:path";
+import dns from "node:dns";
 import { createReadStream, existsSync } from "node:fs";
 import { execFile, spawn } from "node:child_process";
 import { mkdir, readdir, rm, writeFile, readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
 import { jobManager } from "@/lib/JobQueue";
+
+if (dns && dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 import {
   formatBytes,
   formatDurationSeconds,
@@ -803,18 +808,53 @@ async function fetchInstagramMediaInfo(shortcode) {
     console.warn("fetchInstagramMediaInfo: No Instagram cookies found. Request may fail.");
   }
 
-  const res = await fetch(url, { headers });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Instagram API returned status ${res.status}: ${text.slice(0, 100)}`);
-  }
+  try {
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Instagram API returned status ${res.status}: ${text.slice(0, 100)}`);
+    }
 
-  const data = await res.json();
-  const item = data.items?.[0];
-  if (!item) {
-    throw new Error("No media items returned in Instagram API response.");
+    const data = await res.json();
+    const item = data.items?.[0];
+    if (!item) {
+      throw new Error("No media items returned in Instagram API response.");
+    }
+    return item;
+  } catch (fetchError) {
+    console.warn("fetchInstagramMediaInfo: Native fetch failed, attempting curl fallback...", fetchError.message);
+    
+    const curlArgs = [
+      "-s",
+      "-L",
+      "--connect-timeout", "5",
+      "-H", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "-H", "X-IG-App-ID: 936619743392459",
+      "-H", "Sec-Fetch-Dest: empty",
+      "-H", "Sec-Fetch-Mode: cors",
+      "-H", "Sec-Fetch-Site: same-origin"
+    ];
+    if (cookieString) {
+      curlArgs.push("-H", `Cookie: ${cookieString}`);
+    }
+    curlArgs.push(url);
+
+    try {
+      const { stdout } = await execFileAsync("curl", curlArgs, { timeout: 8000 });
+      if (!stdout) {
+        throw new Error("curl returned empty response.");
+      }
+      const data = JSON.parse(stdout);
+      const item = data.items?.[0];
+      if (!item) {
+        throw new Error("No media items returned in Instagram API curl response.");
+      }
+      return item;
+    } catch (curlError) {
+      console.error("fetchInstagramMediaInfo: curl fallback failed:", curlError.message);
+      throw fetchError;
+    }
   }
-  return item;
 }
 
 function parseInstagramMediaInfo(item, sourceUrl) {
@@ -1058,7 +1098,7 @@ export async function inspectMedia(sourceUrl) {
           return parseInstagramMediaInfo(item, sourceUrl);
         }
       } catch (fallbackError) {
-        console.error("inspectMedia: Instagram API fallback failed:", fallbackError.message);
+        console.error("inspectMedia: Instagram API fallback failed:", fallbackError.stack || fallbackError.message, fallbackError.cause);
       }
     }
 
