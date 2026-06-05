@@ -525,7 +525,7 @@ export default function LinkInspector() {
                         <span>{group.items.length} {group.items.length === 1 ? "quality" : "qualities"}</span>
                       </div>
 
-                      <div className={styles.formatsGrid}>
+                      <div className={group.container === "IMAGE" ? `${styles.formatsGrid} ${styles.imageGrid}` : styles.formatsGrid}>
                         {group.items.map((format) => {
                           const isSelectable = format.id.startsWith("photo:");
                           const isSelected = selectedFormatIds.has(format.id);

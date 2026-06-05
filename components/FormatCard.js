@@ -233,30 +233,44 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
         </div>
       )}
 
-      <div className={styles.top}>
-        <div className={format.thumbnail ? styles.thumbnailWrap : styles.iconWrap}>
-          {format.thumbnail ? (
+      {selectable ? (
+        <div className={styles.compactImageSlideBody}>
+          <div className={styles.compactThumbnailWrap}>
             <img
               src={`${apiBase}/api/media/thumbnail?src=${encodeURIComponent(format.thumbnail)}`}
               alt={format.label}
-              className={styles.formatThumbnail}
+              className={styles.compactFormatThumbnail}
             />
-          ) : (
-            <Icon size={18} />
-          )}
+          </div>
         </div>
-        <div className={styles.copy}>
-          <strong>{format.label}</strong>
-          <span>{format.note || "Ready to download"}</span>
-        </div>
-      </div>
+      ) : (
+        <>
+          <div className={styles.top}>
+            <div className={format.thumbnail ? styles.thumbnailWrap : styles.iconWrap}>
+              {format.thumbnail ? (
+                <img
+                  src={`${apiBase}/api/media/thumbnail?src=${encodeURIComponent(format.thumbnail)}`}
+                  alt={format.label}
+                  className={styles.formatThumbnail}
+                />
+              ) : (
+                <Icon size={18} />
+              )}
+            </div>
+            <div className={styles.copy}>
+              <strong>{format.label}</strong>
+              <span>{format.note || "Ready to download"}</span>
+            </div>
+          </div>
 
-      <div className={styles.meta}>
-        <span>{format.type === "audio" ? "Audio" : "Video"}</span>
-        <span>{format.sizeLabel}</span>
-        <span>{format.ext.toUpperCase()}</span>
-        {isBlocked ? <span>Unavailable</span> : null}
-      </div>
+          <div className={styles.meta}>
+            <span>{format.type === "audio" ? "Audio" : "Video"}</span>
+            <span>{format.sizeLabel}</span>
+            <span>{format.ext.toUpperCase()}</span>
+            {isBlocked ? <span>Unavailable</span> : null}
+          </div>
+        </>
+      )}
 
       <GlassButton
         onClick={handleDownload}
