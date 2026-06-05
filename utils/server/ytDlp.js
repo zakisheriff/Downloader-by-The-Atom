@@ -29,6 +29,10 @@ function incrementYoutubeFailures() {
   
   if (global.__consecutiveYoutubeFailures >= 3) {
     if (jobManager.running.size === 0) {
+      if (process.uptime() < 300) {
+        console.warn("ytDlp: 3 consecutive YouTube failures detected, but server uptime is less than 5 minutes. Skipping proactive restart to avoid container crash loops.");
+        return;
+      }
       console.warn("ytDlp: 3 consecutive YouTube failures detected and server is idle. Restarting process to rotate container IP...");
       setTimeout(() => {
         process.exit(1);
