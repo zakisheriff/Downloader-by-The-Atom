@@ -12,7 +12,15 @@ export function isValidSourceUrl(value) {
 }
 
 export function normalizeSourceUrl(value) {
-  return value.trim();
+  let urlStr = value.trim();
+  try {
+    const url = new URL(urlStr);
+    if (url.hostname === "x.com" || url.hostname === "www.x.com") {
+      url.hostname = "twitter.com";
+      return url.toString();
+    }
+  } catch {}
+  return urlStr;
 }
 
 export function formatBytes(value) {

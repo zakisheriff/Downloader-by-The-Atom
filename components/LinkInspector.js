@@ -127,6 +127,7 @@ export default function LinkInspector() {
   const [media, setMedia] = useState(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [selectedFormatIds, setSelectedFormatIds] = useState(new Set());
   const copyTimeoutRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -145,6 +146,8 @@ export default function LinkInspector() {
       window.location.hostname.startsWith("192.168."))
      ? ""
      : "https://zakisheriff-downloader-backend.hf.space");
+
+  const isInstagramCarousel = media?.formats?.some(f => f.id.startsWith("photo:"));
 
   const visibleVideoGroups = (media?.formatGroups?.video || [])
     .map((group) => ({
@@ -168,6 +171,7 @@ export default function LinkInspector() {
   const inspectLink = async (sourceUrl) => {
     setLoading(true);
     setError("");
+    setSelectedFormatIds(new Set()); // Reset selection
 
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);
@@ -192,9 +196,49 @@ export default function LinkInspector() {
     }
   };
 
+  const handleSelectAll = () => {
+    if (!media?.formats) return;
+    const allIds = media.formats.filter(f => f.id.startsWith("photo:")).map(f => f.id);
+    setSelectedFormatIds(new Set(allIds));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedFormatIds(new Set());
+  };
+
+  const handleDownloadSelected = () => {
+    if (!media?.formats) return;
+    const selectedFormats = media.formats.filter(f => selectedFormatIds.has(f.id));
+    selectedFormats.forEach((format, idx) => {
+      setTimeout(() => {
+        const downloadParams = new URLSearchParams({
+          url: media.sourceUrl,
+          format: format.selector,
+          mode: format.mode,
+          ext: format.ext
+        });
+        const downloadUrl = `${apiBase}/api/media/download?${downloadParams.toString()}`;
+        
+        // Trigger download via iframe
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = downloadUrl;
+        document.body.appendChild(iframe);
+        setTimeout(() => document.body.removeChild(iframe), 5000);
+      }, idx * 400);
+    });
+
+    showToast({
+      title: "Downloading selected",
+      description: `Starting download of ${selectedFormats.length} item(s)...`,
+      variant: "success"
+    });
+  };
+
   useEffect(() => {
     const currentUrl = searchParams.get("url") || "";
     setInput(currentUrl);
+    setSelectedFormatIds(new Set()); // Reset selection
 
     if (currentUrl && isValidSourceUrl(currentUrl)) {
       inspectLink(currentUrl);
@@ -266,6 +310,7 @@ export default function LinkInspector() {
     setInput("");
     setMedia(null);
     setError("");
+    setSelectedFormatIds(new Set()); // Reset selection
     router.replace("/dashboard");
   };
 
@@ -437,6 +482,35 @@ export default function LinkInspector() {
               </GlassCard>
             ) : null}
 
+            {isInstagramCarousel && (
+              <GlassCard className={styles.bulkActionBar}>
+                <div className={styles.bulkActionInfo}>
+                  <strong>Carousel Slides</strong>
+                  <span>{selectedFormatIds.size} of {media.formats.filter(f => f.id.startsWith("photo:")).length} selected</span>
+                </div>
+                <div className={styles.bulkActionButtons}>
+                  {selectedFormatIds.size === media.formats.filter(f => f.id.startsWith("photo:")).length ? (
+                    <GlassButton size="sm" intensity={4} onClick={handleDeselectAll}>
+                      Deselect All
+                    </GlassButton>
+                  ) : (
+                    <GlassButton size="sm" intensity={4} onClick={handleSelectAll}>
+                      Select All
+                    </GlassButton>
+                  )}
+                  <GlassButton
+                    size="sm"
+                    intensity={6}
+                    disabled={selectedFormatIds.size === 0}
+                    onClick={handleDownloadSelected}
+                    className={styles.bulkDownloadBtn}
+                  >
+                    Download Selected
+                  </GlassButton>
+                </div>
+              </GlassCard>
+            )}
+
             {visibleVideoGroups.length ? (
               <div className={styles.groupSection}>
                 <div className={styles.sectionHeading}>
@@ -452,14 +526,29 @@ export default function LinkInspector() {
                       </div>
 
                       <div className={styles.formatsGrid}>
-                        {group.items.map((format) => (
-                          <FormatCard
-                            key={format.id}
-                            format={format}
-                            sourceUrl={media.sourceUrl}
-                            mediaTitle={media.title}
-                          />
-                        ))}
+                        {group.items.map((format) => {
+                          const isSelectable = format.id.startsWith("photo:");
+                          const isSelected = selectedFormatIds.has(format.id);
+                          return (
+                            <FormatCard
+                              key={format.id}
+                              format={format}
+                              sourceUrl={media.sourceUrl}
+                              mediaTitle={media.title}
+                              selectable={isSelectable}
+                              isSelected={isSelected}
+                              onSelectToggle={() => {
+                                const newSelection = new Set(selectedFormatIds);
+                                if (newSelection.has(format.id)) {
+                                  newSelection.delete(format.id);
+                                } else {
+                                  newSelection.add(format.id);
+                                }
+                                setSelectedFormatIds(newSelection);
+                              }}
+                            />
+                          );
+                        })}
                       </div>
                     </GlassCard>
                   ))}

@@ -789,6 +789,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
           formats.push({
             id: `photo:carousel_${idx}_video:direct`,
             selector: videoUrl,
+            thumbnail: m.image_versions2?.candidates?.[0]?.url,
             mode: "direct",
             type: "video",
             ext: "mp4",
@@ -807,6 +808,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
           formats.push({
             id: `photo:carousel_${idx}_image:direct`,
             selector: imageUrl,
+            thumbnail: imageUrl,
             mode: "direct",
             type: "video",
             ext: "jpg",
@@ -827,6 +829,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
       formats.push({
         id: `photo:video:direct`,
         selector: videoUrl,
+        thumbnail: item.image_versions2?.candidates?.[0]?.url,
         mode: "direct",
         type: "video",
         ext: "mp4",
@@ -845,6 +848,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
       formats.push({
         id: `photo:image:direct`,
         selector: imageUrl,
+        thumbnail: imageUrl,
         mode: "direct",
         type: "video",
         ext: "jpg",

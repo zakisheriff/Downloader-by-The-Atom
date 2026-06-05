@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowDownToLine, LoaderCircle, Music4, PlaySquare } from "lucide-react";
+import { ArrowDownToLine, Check, LoaderCircle, Music4, PlaySquare } from "lucide-react";
 import { GlassButton } from "@zakisheriff/liquid-glass";
 import GlassCard from "@/components/GlassCard";
 import LoadingArcade from "@/components/LoadingArcade";
 import { useToast } from "@/components/providers/ToastProvider";
 import styles from "@/components/FormatCard.module.css";
 
-export default function FormatCard({ format, sourceUrl, mediaTitle }) {
+export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, isSelected, onSelectToggle }) {
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadStatus, setDownloadStatus] = useState(null);
@@ -201,11 +201,49 @@ export default function FormatCard({ format, sourceUrl, mediaTitle }) {
     }
   };
 
+  const handleCardClick = (e) => {
+    if (selectable && e.target.tagName !== "BUTTON" && !e.target.closest("button") && !e.target.closest("a")) {
+      onSelectToggle();
+    }
+  };
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL ||
+    (typeof window !== "undefined" &&
+     (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "[::1]" ||
+      window.location.hostname.startsWith("192.168."))
+     ? ""
+     : "https://zakisheriff-downloader-backend.hf.space");
+
   return (
-    <GlassCard className={styles.card}>
+    <GlassCard
+      className={`${styles.card} ${selectable ? styles.selectableCard : ""} ${isSelected ? styles.selectedCard : ""}`}
+      onClick={handleCardClick}
+    >
+      {selectable && (
+        <div 
+          className={`${styles.checkboxWrap} ${isSelected ? styles.checkboxSelected : ""}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelectToggle();
+          }}
+        >
+          {isSelected ? <Check size={12} className={styles.checkboxCheckIcon} /> : null}
+        </div>
+      )}
+
       <div className={styles.top}>
-        <div className={styles.iconWrap}>
-          <Icon size={18} />
+        <div className={format.thumbnail ? styles.thumbnailWrap : styles.iconWrap}>
+          {format.thumbnail ? (
+            <img
+              src={`${apiBase}/api/media/thumbnail?src=${encodeURIComponent(format.thumbnail)}`}
+              alt={format.label}
+              className={styles.formatThumbnail}
+            />
+          ) : (
+            <Icon size={18} />
+          )}
         </div>
         <div className={styles.copy}>
           <strong>{format.label}</strong>
