@@ -1013,7 +1013,26 @@ function parseInstagramMediaInfo(item, sourceUrl) {
 export async function inspectMedia(sourceUrl) {
   let stdout, stderr;
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
-  
+  const isInstagram = sourceUrl && (sourceUrl.includes("instagram.com") || sourceUrl.includes("instagr.am"));
+
+  if (isInstagram) {
+    console.log("inspectMedia: Instagram link detected. Trying fast Instagram API fetch first...");
+    try {
+      const shortcodeMatch = sourceUrl.match(/(?:p|reel|tv)\/([A-Za-z0-9-_]+)/);
+      if (shortcodeMatch) {
+        const shortcode = shortcodeMatch[1];
+        const item = await fetchInstagramMediaInfo(shortcode);
+        const parsed = parseInstagramMediaInfo(item, sourceUrl);
+        if (parsed && parsed.formats && parsed.formats.length > 0) {
+          console.log("inspectMedia: Fast Instagram API fetch succeeded!");
+          return parsed;
+        }
+      }
+    } catch (fallbackError) {
+      console.warn("inspectMedia: Fast Instagram API fetch failed, falling back to standard yt-dlp:", fallbackError.message);
+    }
+  }
+
   let attempts = [];
   if (isYouTube) {
     const hasCookies = await hasCookiesConfigured();
