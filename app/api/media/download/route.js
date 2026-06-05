@@ -28,7 +28,7 @@ export async function GET(request) {
   // 1. Rate Limiting Check (Only on new download inspect/prepare/stream requests, not when retrieving completed files)
   if (!readyOnly && !validateOnly) {
     if (rateLimiter.isRateLimited(request)) {
-      return new Response("Too many downloads. Limit is 5 per hour.", { status: 429 });
+      return new Response(`Too many downloads. Limit is ${rateLimiter.limit} per hour.`, { status: 429 });
     }
   }
 

@@ -458,17 +458,23 @@ export default function LinkInspector() {
               <p>{media.description || "Public media detected and ready for a format choice."}</p>
 
               <div className={styles.previewMeta}>
-                <div>
-                  <span>Duration</span>
-                  <strong>{media.durationLabel}</strong>
-                </div>
+                {!isInstagramCarousel && (
+                  <div>
+                    <span>Duration</span>
+                    <strong>{media.durationLabel}</strong>
+                  </div>
+                )}
                 <div>
                   <span>Uploader</span>
                   <strong>{media.uploader || "Unknown"}</strong>
                 </div>
                 <div>
-                  <span>Formats</span>
-                  <strong>{visibleFormatsCount} options</strong>
+                  <span>{isInstagramCarousel ? "Slides" : "Formats"}</span>
+                  <strong>
+                    {isInstagramCarousel
+                      ? `${visibleFormatsCount} ${visibleFormatsCount === 1 ? "slide" : "slides"}`
+                      : `${visibleFormatsCount} ${visibleFormatsCount === 1 ? "option" : "options"}`}
+                  </strong>
                 </div>
               </div>
             </div>

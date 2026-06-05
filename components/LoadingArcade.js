@@ -362,10 +362,6 @@ export default function LoadingArcade({
     setCurrentColor({ text, valueName });
   };
 
-  useEffect(() => {
-    rollColorMatch();
-  }, []);
-
   const answerColorMatch = (userAnswer) => {
     if (colorLocked) return;
     setColorLocked(true);
@@ -512,10 +508,6 @@ export default function LoadingArcade({
     });
   };
 
-  useEffect(() => {
-    generateMathEquation();
-  }, []);
-
   const answerMath = (userAnswer) => {
     if (mathLocked) return;
     setMathLocked(true);
@@ -536,6 +528,15 @@ export default function LoadingArcade({
       setMathLocked(false);
     }, 450);
   };
+
+  // Initialize all games with random states on client mount to avoid hydration mismatch
+  useEffect(() => {
+    moveDot();
+    rollNumbers();
+    setMemorySequence([randomIndex(9), randomIndex(9)]);
+    rollColorMatch();
+    generateMathEquation();
+  }, []);
 
   return (
     <div className={`${styles.arcade} ${compact ? styles.compact : ""}`.trim()}>
