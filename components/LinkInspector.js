@@ -215,7 +215,8 @@ export default function LinkInspector() {
           url: media.sourceUrl,
           format: format.selector,
           mode: format.mode,
-          ext: format.ext
+          ext: format.ext,
+          formatId: format.id
         });
         const downloadUrl = `${apiBase}/api/media/download?${downloadParams.toString()}`;
         
@@ -520,7 +521,7 @@ export default function LinkInspector() {
             {visibleVideoGroups.length ? (
               <div className={styles.groupSection}>
                 <div className={styles.sectionHeading}>
-                  <h3>Video</h3>
+                  <h3>{isInstagramCarousel ? "Post / Images" : "Video"}</h3>
                 </div>
 
                 <div className={styles.groupStack}>
@@ -528,7 +529,14 @@ export default function LinkInspector() {
                     <GlassCard key={`video-${group.container}`} className={styles.groupCard}>
                       <div className={styles.groupHeader}>
                         <strong>{group.container}</strong>
-                        <span>{group.items.length} {group.items.length === 1 ? "quality" : "qualities"}</span>
+                        <span>
+                          {group.items.length}{" "}
+                          {group.container === "IMAGE"
+                            ? (group.items.length === 1 ? "image" : "images")
+                            : group.container === "VIDEO" && isInstagramCarousel
+                            ? (group.items.length === 1 ? "video" : "videos")
+                            : (group.items.length === 1 ? "quality" : "qualities")}
+                        </span>
                       </div>
 
                       <div className={group.container === "IMAGE" ? `${styles.formatsGrid} ${styles.imageGrid}` : styles.formatsGrid}>

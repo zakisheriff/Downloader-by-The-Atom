@@ -24,6 +24,7 @@ export async function GET(request) {
   const prepareOnly = request.nextUrl.searchParams.get("prepare") === "true";
   const readyOnly = request.nextUrl.searchParams.get("ready") === "true";
   const downloadId = request.nextUrl.searchParams.get("id") || "";
+  const formatId = request.nextUrl.searchParams.get("formatId") || "";
 
   // 1. Rate Limiting Check (Only on new download inspect/prepare/stream requests, not when retrieving completed files)
   if (!readyOnly && !validateOnly) {
@@ -151,9 +152,15 @@ export async function GET(request) {
       return new Response(`Media exceeds maximum duration of ${limitLabel} for the free tier.`, { status: 400 });
     }
 
-    const selectedFormat = media.formats.find(
-      (format) => format.selector === selector && format.mode === mode && format.ext === ext
-    ) || media.formats[0];
+    let selectedFormat = null;
+    if (formatId) {
+      selectedFormat = media.formats.find((format) => format.id === formatId);
+    }
+    if (!selectedFormat) {
+      selectedFormat = media.formats.find(
+        (format) => format.selector === selector && format.mode === mode && format.ext === ext
+      ) || media.formats[0];
+    }
 
     if (selectedFormat?.disabled) {
       return new Response(

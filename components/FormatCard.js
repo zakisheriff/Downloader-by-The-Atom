@@ -66,6 +66,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
         mode: format.mode,
         ext: format.ext,
         id: downloadId,
+        formatId: format.id,
         prepare: "true"
       });
 
@@ -144,6 +145,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
               mode: format.mode,
               ext: format.ext,
               id: downloadId,
+              formatId: format.id,
               ready: "true"
             });
             window.location.href = `${apiBase}/api/media/download?${downloadParams.toString()}`;
