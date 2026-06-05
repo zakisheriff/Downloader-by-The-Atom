@@ -624,6 +624,275 @@ function normalizeWarningText(stderr = "") {
   return "";
 }
 
+function shortcodeToId(shortcode) {
+  let id = BigInt(0);
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  for (let i = 0; i < shortcode.length; i++) {
+    const char = shortcode[i];
+    const value = alphabet.indexOf(char);
+    if (value === -1) {
+      throw new Error(`Invalid character in shortcode: ${char}`);
+    }
+    id = id * BigInt(64) + BigInt(value);
+  }
+  return id.toString();
+}
+
+async function getInstagramCookieString() {
+  let instagramCookies = [];
+  
+  // 1. Check env var
+  if (process.env.YT_DLP_COOKIES_BASE64) {
+    try {
+      const cleanBase64 = process.env.YT_DLP_COOKIES_BASE64.replace(/\s/g, "");
+      const chunks = cleanBase64.split(/[,;=]+/).filter(Boolean);
+      for (const chunk of chunks) {
+        const decoded = Buffer.from(chunk, "base64").toString("utf-8").trim();
+        if (decoded.startsWith("[") || decoded.startsWith("{")) {
+          try {
+            const parsed = JSON.parse(decoded);
+            if (Array.isArray(parsed)) {
+              const filtered = parsed.filter(c => c.domain && c.domain.includes("instagram.com"));
+              instagramCookies.push(...filtered);
+            }
+          } catch {}
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing YT_DLP_COOKIES_BASE64 for Instagram:", e);
+    }
+  }
+  
+  // 2. Read local files
+  try {
+    const files = await readdir(process.cwd());
+    for (const file of files) {
+      const lower = file.toLowerCase();
+      if (lower.includes("instagram") && (lower.endsWith(".json") || lower.endsWith(".txt"))) {
+        const content = await readFile(path.join(process.cwd(), file), "utf-8");
+        if (lower.endsWith(".json")) {
+          try {
+            const parsed = JSON.parse(content);
+            if (Array.isArray(parsed)) {
+              instagramCookies.push(...parsed);
+            }
+          } catch {}
+        } else {
+          // Netscape parser
+          const lines = content.split("\n");
+          for (const line of lines) {
+            if (line.startsWith("#") || !line.trim()) continue;
+            const parts = line.split("\t");
+            if (parts.length >= 7) {
+              const domain = parts[0];
+              const name = parts[5];
+              const value = parts[6]?.trim() || "";
+              if (domain.includes("instagram.com")) {
+                instagramCookies.push({ name, value, domain });
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Error scanning local files for Instagram cookies:", e);
+  }
+
+  // Also fall back to general local cookie files if no specific instagram ones found
+  if (instagramCookies.length === 0) {
+    try {
+      const files = await readdir(process.cwd());
+      for (const file of files) {
+        const lower = file.toLowerCase();
+        if ((lower.endsWith("cookies.json") || lower.endsWith("cookie.json")) && !lower.includes("youtube")) {
+          const content = await readFile(path.join(process.cwd(), file), "utf-8");
+          try {
+            const parsed = JSON.parse(content);
+            if (Array.isArray(parsed)) {
+              const filtered = parsed.filter(c => c.domain && c.domain.includes("instagram.com"));
+              instagramCookies.push(...filtered);
+            }
+          } catch {}
+        }
+      }
+    } catch {}
+  }
+  
+  if (instagramCookies.length > 0) {
+    // Deduplicate by name
+    const unique = [];
+    const seen = new Set();
+    for (const c of instagramCookies) {
+      if (!seen.has(c.name)) {
+        seen.add(c.name);
+        unique.push(`${c.name}=${c.value}`);
+      }
+    }
+    return unique.join("; ");
+  }
+  
+  return "";
+}
+
+async function fetchInstagramMediaInfo(shortcode) {
+  const mediaId = shortcodeToId(shortcode);
+  const url = `https://www.instagram.com/api/v1/media/${mediaId}/info/`;
+  console.log(`fetchInstagramMediaInfo: Querying Instagram API for shortcode ${shortcode} (ID: ${mediaId})`);
+
+  const cookieString = await getInstagramCookieString();
+  const headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "X-IG-App-ID": "936619743392459",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin"
+  };
+  if (cookieString) {
+    headers["Cookie"] = cookieString;
+  } else {
+    console.warn("fetchInstagramMediaInfo: No Instagram cookies found. Request may fail.");
+  }
+
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Instagram API returned status ${res.status}: ${text.slice(0, 100)}`);
+  }
+
+  const data = await res.json();
+  const item = data.items?.[0];
+  if (!item) {
+    throw new Error("No media items returned in Instagram API response.");
+  }
+  return item;
+}
+
+function parseInstagramMediaInfo(item, sourceUrl) {
+  const title = sanitizeFilename(
+    item.caption?.text?.split("\n")[0] || `Instagram post by ${item.user?.username || "user"}`,
+    "Instagram Post"
+  );
+  const uploader = item.user?.full_name || item.user?.username || null;
+  const description = item.caption?.text || null;
+  const thumbnail = item.image_versions2?.candidates?.[0]?.url || null;
+
+  const formats = [];
+  
+  if (item.media_type === 8) { // Carousel
+    item.carousel_media?.forEach((m, idx) => {
+      const isVideo = m.media_type === 2;
+      const slideNum = idx + 1;
+      if (isVideo) {
+        const videoUrl = m.video_versions?.[0]?.url;
+        if (videoUrl) {
+          formats.push({
+            id: `photo:carousel_${idx}_video:direct`,
+            selector: videoUrl,
+            mode: "direct",
+            type: "video",
+            ext: "mp4",
+            container: "VIDEO",
+            label: `Slide ${slideNum} (Video)`,
+            note: "High quality video slide",
+            qualityValue: 1000 - idx,
+            sizeBytes: 0,
+            sizeLabel: "Unknown",
+            requiresServerSupport: false
+          });
+        }
+      } else {
+        const imageUrl = m.image_versions2?.candidates?.[0]?.url;
+        if (imageUrl) {
+          formats.push({
+            id: `photo:carousel_${idx}_image:direct`,
+            selector: imageUrl,
+            mode: "direct",
+            type: "video",
+            ext: "jpg",
+            container: "IMAGE",
+            label: `Slide ${slideNum} (Image)`,
+            note: "High quality image slide",
+            qualityValue: 1000 - idx,
+            sizeBytes: 0,
+            sizeLabel: "Unknown",
+            requiresServerSupport: false
+          });
+        }
+      }
+    });
+  } else if (item.media_type === 2) {
+    const videoUrl = item.video_versions?.[0]?.url;
+    if (videoUrl) {
+      formats.push({
+        id: `photo:video:direct`,
+        selector: videoUrl,
+        mode: "direct",
+        type: "video",
+        ext: "mp4",
+        container: "VIDEO",
+        label: "Video (High Quality)",
+        note: "High quality video",
+        qualityValue: 1000,
+        sizeBytes: 0,
+        sizeLabel: "Unknown",
+        requiresServerSupport: false
+      });
+    }
+  } else {
+    const imageUrl = item.image_versions2?.candidates?.[0]?.url;
+    if (imageUrl) {
+      formats.push({
+        id: `photo:image:direct`,
+        selector: imageUrl,
+        mode: "direct",
+        type: "video",
+        ext: "jpg",
+        container: "IMAGE",
+        label: "Image (High Quality)",
+        note: "High quality image",
+        qualityValue: 1000,
+        sizeBytes: 0,
+        sizeLabel: "Unknown",
+        requiresServerSupport: false
+      });
+    }
+  }
+
+  const videoGroupsMap = new Map();
+  formats.forEach(format => {
+    const container = format.container;
+    if (!videoGroupsMap.has(container)) {
+      videoGroupsMap.set(container, {
+        container,
+        type: "video",
+        items: []
+      });
+    }
+    videoGroupsMap.get(container).items.push(format);
+  });
+
+  const videoGroups = Array.from(videoGroupsMap.values());
+
+  return {
+    sourceUrl,
+    title,
+    description: description ? description.slice(0, 180) : null,
+    thumbnail,
+    sourceName: "Instagram",
+    durationLabel: "Unknown",
+    durationSeconds: 0,
+    uploader,
+    uploadDate: null,
+    formats,
+    formatGroups: {
+      video: videoGroups,
+      audio: []
+    },
+    serverWarning: ""
+  };
+}
+
 export async function inspectMedia(sourceUrl) {
   let stdout, stderr;
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
@@ -725,6 +994,21 @@ export async function inspectMedia(sourceUrl) {
   }
 
   if (!stdout) {
+    const isInstagram = sourceUrl && (sourceUrl.includes("instagram.com") || sourceUrl.includes("instagr.am"));
+    if (isInstagram) {
+      console.log("inspectMedia: yt-dlp failed on Instagram link. Attempting Instagram API fallback...");
+      try {
+        const shortcodeMatch = sourceUrl.match(/(?:p|reel|tv)\/([A-Za-z0-9-_]+)/);
+        if (shortcodeMatch) {
+          const shortcode = shortcodeMatch[1];
+          const item = await fetchInstagramMediaInfo(shortcode);
+          return parseInstagramMediaInfo(item, sourceUrl);
+        }
+      } catch (fallbackError) {
+        console.error("inspectMedia: Instagram API fallback failed:", fallbackError.message);
+      }
+    }
+
     const errText = lastError?.stderr?.trim() || lastError?.message || "This link could not be inspected right now.";
     if (isYouTube) {
       throw createYtError(
@@ -885,6 +1169,20 @@ async function locateCompletedFile(directoryPath) {
 }
 
 export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
+  const isDirectUrl = selector && (selector.startsWith("http://") || selector.startsWith("https://"));
+  
+  if (isDirectUrl) {
+    const res = await fetch(selector, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      }
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch direct stream: status ${res.status}`);
+    }
+    return res.body;
+  }
+
   const hasCookies = await hasCookiesConfigured();
   const cookiesArg = await getCookiesArg(sourceUrl, hasCookies);
   const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
@@ -932,6 +1230,70 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 }
 
 export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, downloadId, recode = false }) {
+  const isDirectUrl = selector && (selector.startsWith("http://") || selector.startsWith("https://"));
+  
+  if (isDirectUrl) {
+    const outputDir = await createTempOutputDir();
+    const title = sourceUrl.includes("instagram.com") ? "Instagram_Post" : "download";
+    const filename = `${title}.${ext}`;
+    const filePath = path.join(outputDir, filename);
+
+    if (downloadId) {
+      activeDownloads.set(downloadId, { status: "downloading", progress: 0 });
+    }
+
+    try {
+      const response = await fetch(selector, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch direct media: status ${response.status}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      await writeFile(filePath, Buffer.from(arrayBuffer));
+
+      const cleanup = async () => {
+        await rm(outputDir, { recursive: true, force: true }).catch(() => null);
+      };
+
+      if (downloadId) {
+        activeDownloads.set(downloadId, {
+          status: "completed",
+          progress: 100,
+          filePath,
+          cleanup
+        });
+
+        // Auto-cleanup after 5 minutes if client never fetches it
+        setTimeout(async () => {
+          const entry = activeDownloads.get(downloadId);
+          if (entry && entry.filePath === filePath) {
+            try {
+              await cleanup();
+            } catch (e) {
+              console.error("Auto-cleanup failed:", e);
+            }
+            activeDownloads.delete(downloadId);
+          }
+        }, 5 * 60 * 1000);
+      }
+
+      return {
+        filePath,
+        cleanup
+      };
+    } catch (err) {
+      if (downloadId) {
+        activeDownloads.set(downloadId, { status: "failed", error: err.message || "Failed" });
+      }
+      await rm(outputDir, { recursive: true, force: true }).catch(() => null);
+      throw err;
+    }
+  }
+
   const outputDir = await createTempOutputDir();
   const outputTemplate = path.join(outputDir, "%(title)s.%(ext)s");
 
