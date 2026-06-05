@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Clipboard, Copy, Link2, X } from "lucide-react";
 import styles from "@/components/HeroSection.module.css";
 import { useGlassEffect, GlassButton, LiquidGlassFilter } from "@zakisheriff/liquid-glass";
+import { isValidSourceUrl } from "@/utils/helpers";
 
 // Official YouTube Brand Icon (Red play shape + white triangle)
 const YouTubeIcon = ({ size }) => (
@@ -174,8 +175,12 @@ export default function HeroSection() {
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      if (text) {
-        setInput(text);
+      const trimmedText = (text || "").trim();
+      if (trimmedText) {
+        setInput(trimmedText);
+        if (isValidSourceUrl(trimmedText)) {
+          router.push(`/dashboard?url=${encodeURIComponent(trimmedText)}`);
+        }
       }
     } catch (err) {
       console.error("Failed to read clipboard contents: ", err);

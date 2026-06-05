@@ -732,6 +732,12 @@ export async function inspectMedia(sourceUrl) {
         403
       );
     }
+    if (errText.includes("No video formats found") && (sourceUrl.includes("instagram.com") || sourceUrl.includes("instagr.am"))) {
+      throw createYtError(
+        "This Instagram link contains only photos/images. Downloader by The Atom only supports downloading videos (like Reels and video posts) or audio.",
+        400
+      );
+    }
     throw createYtError(errText, 400);
   }
 
