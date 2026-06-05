@@ -680,7 +680,9 @@ async function getInstagramCookieString() {
       const chunks = cleanBase64.split(/[,;=]+/).filter(Boolean);
       for (const chunk of chunks) {
         const decoded = Buffer.from(chunk, "base64").toString("utf-8").trim();
-        if (decoded.startsWith("[") || decoded.startsWith("{")) {
+        if (!decoded) continue;
+        const isJson = decoded.startsWith("[") || decoded.startsWith("{");
+        if (isJson) {
           try {
             const parsed = JSON.parse(decoded);
             if (Array.isArray(parsed)) {
@@ -688,6 +690,21 @@ async function getInstagramCookieString() {
               instagramCookies.push(...filtered);
             }
           } catch {}
+        } else {
+          // Netscape parser for environment cookie chunks
+          const lines = decoded.split("\n");
+          for (const line of lines) {
+            if (line.startsWith("#") || !line.trim()) continue;
+            const parts = line.split("\t");
+            if (parts.length >= 7) {
+              const domain = parts[0];
+              const name = parts[5];
+              const value = parts[6]?.trim() || "";
+              if (domain.includes("instagram.com")) {
+                instagramCookies.push({ name, value, domain });
+              }
+            }
+          }
         }
       }
     } catch (e) {
