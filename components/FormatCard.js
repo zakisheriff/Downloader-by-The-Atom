@@ -263,6 +263,11 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
      ? ""
      : "https://zakisheriff-downloader-backend.hf.space");
 
+  const isCdnInstagram = format.thumbnail && (format.thumbnail.includes("cdninstagram.com") || format.thumbnail.includes("instagram.com"));
+  const thumbnailSrc = isCdnInstagram
+    ? format.thumbnail
+    : `${apiBase}/api/media/thumbnail?src=${encodeURIComponent(format.thumbnail)}`;
+
   return (
     <GlassCard
       className={`${styles.card} ${selectable ? styles.selectableCard : ""} ${isSelected ? styles.selectedCard : ""}`}
@@ -284,8 +289,9 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
         <div className={styles.compactImageSlideBody}>
           <div className={styles.compactThumbnailWrap}>
             <img
-              src={`${apiBase}/api/media/thumbnail?src=${encodeURIComponent(format.thumbnail)}`}
+              src={thumbnailSrc}
               alt={format.label}
+              referrerPolicy="no-referrer"
               className={styles.compactFormatThumbnail}
             />
           </div>
@@ -296,8 +302,9 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
             <div className={format.thumbnail ? styles.thumbnailWrap : styles.iconWrap}>
               {format.thumbnail ? (
                 <img
-                  src={`${apiBase}/api/media/thumbnail?src=${encodeURIComponent(format.thumbnail)}`}
+                  src={thumbnailSrc}
                   alt={format.label}
+                  referrerPolicy="no-referrer"
                   className={styles.formatThumbnail}
                 />
               ) : (

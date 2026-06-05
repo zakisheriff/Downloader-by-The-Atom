@@ -452,8 +452,13 @@ export default function LinkInspector() {
             <div className={styles.previewMedia}>
               {media.thumbnail ? (
                 <img
-                  src={`${apiBase}/api/media/thumbnail?src=${encodeURIComponent(media.thumbnail)}`}
+                  src={
+                    media.thumbnail && (media.thumbnail.includes("cdninstagram.com") || media.thumbnail.includes("instagram.com"))
+                      ? media.thumbnail
+                      : `${apiBase}/api/media/thumbnail?src=${encodeURIComponent(media.thumbnail)}`
+                  }
                   alt={media.title}
+                  referrerPolicy="no-referrer"
                   className={styles.thumbnail}
                 />
               ) : (

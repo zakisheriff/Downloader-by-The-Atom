@@ -794,8 +794,8 @@ async function fetchInstagramMediaInfo(shortcode) {
   
   // Endpoints to try in order of reliability
   const urls = [
-    `https://www.instagram.com/api/v1/media/${mediaId}/info/`,
     `https://i.instagram.com/api/v1/media/${mediaId}/info/`,
+    `https://www.instagram.com/api/v1/media/${mediaId}/info/`,
     `https://www.instagram.com/p/${shortcode}/?__a=1&__d=dis`
   ];
 
