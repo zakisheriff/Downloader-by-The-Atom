@@ -49,6 +49,11 @@ export const metadata = {
     "download Instagram Reels",
     "save Instagram video",
     "Instagram downloader online",
+    "Instagram post downloader",
+    "Instagram video downloader free",
+    "Instagram Reel downloader free",
+    "Instagram pics downloader",
+    "Instagram post downloader free",
     // TikTok
     "TikTok video downloader",
     "download TikTok without watermark",
