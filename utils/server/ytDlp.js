@@ -792,14 +792,11 @@ async function getInstagramCookieString() {
 async function fetchInstagramMediaInfo(shortcode) {
   const mediaId = shortcodeToId(shortcode);
   
-  // Try endpoints in order of reliability on cloud/Hugging Face IPs:
-  // 1. Web JSON URL (uses public /p/ path which WAFs don't block like /api/v1/)
-  // 2. Mobile API URL (uses i.instagram.com subdomain which is often unblocked)
-  // 3. Desktop API URL (original fallback)
+  // Endpoints to try in order of reliability
   const urls = [
-    `https://www.instagram.com/p/${shortcode}/?__a=1&__d=dis`,
+    `https://www.instagram.com/api/v1/media/${mediaId}/info/`,
     `https://i.instagram.com/api/v1/media/${mediaId}/info/`,
-    `https://www.instagram.com/api/v1/media/${mediaId}/info/`
+    `https://www.instagram.com/p/${shortcode}/?__a=1&__d=dis`
   ];
 
   const cookieString = await getInstagramCookieString();
@@ -816,59 +813,66 @@ async function fetchInstagramMediaInfo(shortcode) {
     console.warn("fetchInstagramMediaInfo: No Instagram cookies found. Request may fail.");
   }
 
-  let lastError = null;
-
+  // Step 1: Try native fetch for each URL
   for (const url of urls) {
-    console.log(`fetchInstagramMediaInfo: Querying Instagram API endpoint: ${url}`);
+    console.log(`fetchInstagramMediaInfo: Trying native fetch: ${url}`);
     try {
-      const res = await fetch(url, { headers });
-      if (!res.ok) {
-        throw new Error(`HTTP status ${res.status}`);
-      }
-
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const item = data.items?.[0] || data.graphql?.shortcode_media;
-      if (!item) {
-        throw new Error("No media items or graphql metadata returned.");
-      }
-      return item;
-    } catch (fetchError) {
-      console.warn(`fetchInstagramMediaInfo: Native fetch failed for ${url}, attempting curl fallback...`, fetchError.message);
-      
-      const curlArgs = [
-        "-s",
-        "-L",
-        "--connect-timeout", "5",
-        "-H", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "-H", "X-IG-App-ID: 936619743392459",
-        "-H", "Sec-Fetch-Dest: empty",
-        "-H", "Sec-Fetch-Mode: cors",
-        "-H", "Sec-Fetch-Site: same-origin"
-      ];
-      if (cookieString) {
-        curlArgs.push("-H", `Cookie: ${cookieString}`);
-      }
-      curlArgs.push(url);
-
-      try {
-        const { stdout } = await execFileAsync("curl", curlArgs, { timeout: 8000 });
-        if (!stdout) {
-          throw new Error("curl returned empty response.");
-        }
-        const data = JSON.parse(stdout);
-        const item = data.items?.[0] || data.graphql?.shortcode_media;
-        if (!item) {
-          throw new Error("No media items or graphql metadata returned in curl response.");
-        }
-        return item;
-      } catch (curlError) {
-        console.error(`fetchInstagramMediaInfo: curl fallback failed for ${url}:`, curlError.message);
-        lastError = curlError;
-      }
+      if (item) return item;
+      throw new Error("No media items returned.");
+    } catch (e) {
+      console.warn(`fetchInstagramMediaInfo: Native fetch failed for ${url}:`, e.message);
     }
   }
 
-  throw lastError || new Error("All Instagram API endpoints failed.");
+  // Step 2: Python urllib fallback (uses the same networking stack as yt-dlp)
+  // On Hugging Face, Node.js fetch and curl both get ConnectTimeoutError to instagram.com,
+  // but yt-dlp (Python/urllib) connects successfully. So we use Python as our HTTP client.
+  console.log("fetchInstagramMediaInfo: All native fetch attempts failed. Trying Python urllib fallback...");
+
+  for (const url of urls) {
+    console.log(`fetchInstagramMediaInfo: Trying Python urllib for: ${url}`);
+    try {
+      const headersJson = JSON.stringify(headers);
+      // Inline Python script that uses urllib.request (same stack as yt-dlp)
+      const pyScript = `
+import urllib.request, json, sys, ssl
+ctx = ssl.create_default_context()
+headers = json.loads(sys.argv[1])
+req = urllib.request.Request(sys.argv[2], headers=headers)
+try:
+    resp = urllib.request.urlopen(req, timeout=8, context=ctx)
+    sys.stdout.write(resp.read().decode('utf-8'))
+except Exception as e:
+    sys.stderr.write(str(e))
+    sys.exit(1)
+`.trim();
+
+      const { stdout, stderr } = await execFileAsync("python3", ["-c", pyScript, headersJson, url], {
+        timeout: 12000,
+        maxBuffer: 5 * 1024 * 1024
+      });
+
+      if (!stdout || !stdout.trim()) {
+        throw new Error(stderr ? `Python error: ${stderr.trim()}` : "Python returned empty response.");
+      }
+
+      const data = JSON.parse(stdout);
+      const item = data.items?.[0] || data.graphql?.shortcode_media;
+      if (item) {
+        console.log("fetchInstagramMediaInfo: Python urllib succeeded!");
+        return item;
+      }
+      throw new Error("No media items in Python response.");
+    } catch (pyError) {
+      console.error(`fetchInstagramMediaInfo: Python urllib failed for ${url}:`, pyError.message);
+    }
+  }
+
+  throw new Error("All Instagram API fetch strategies (native fetch + Python urllib) failed for all endpoints.");
 }
 
 function parseInstagramMediaInfo(item, sourceUrl) {
