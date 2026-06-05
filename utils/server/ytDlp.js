@@ -417,6 +417,31 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
     bestPerVariant.set(key, pickBetterVideoFormat(current, format));
   }
 
+  // Find the single best progressive format per container to mark as "(Recommended)"
+  const bestProgressivePerContainer = new Map();
+  for (const format of bestPerVariant.values()) {
+    const progressive = format.acodec !== "none";
+    if (progressive) {
+      const container = format.ext.toUpperCase();
+      const currentBest = bestProgressivePerContainer.get(container);
+      if (!currentBest) {
+        bestProgressivePerContainer.set(container, format);
+      } else {
+        const currentBestHeight = currentBest.height || 0;
+        const formatHeight = format.height || 0;
+        if (formatHeight > currentBestHeight) {
+          bestProgressivePerContainer.set(container, format);
+        } else if (formatHeight === currentBestHeight) {
+          const currentBestTbr = currentBest.tbr || 0;
+          const formatTbr = format.tbr || 0;
+          if (formatTbr > currentBestTbr) {
+            bestProgressivePerContainer.set(container, format);
+          }
+        }
+      }
+    }
+  }
+
   const grouped = new Map();
 
   for (const format of bestPerVariant.values()) {
@@ -436,6 +461,9 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
       : [resolution, fps, "Server merge required"].filter(Boolean).join(" • ");
     const sizeBytes = estimateSizeBytes(format, durationSeconds);
     const labelBase = format.height ? `${format.height}p${getResolutionSuffix(format.height)}` : format.format_note || "Video";
+    
+    const isRecommended = progressive && bestProgressivePerContainer.get(container) === format;
+
     const option = {
       id: `video:${format.format_id}:${mode}`,
       selector: progressive ? format.format_id : `${format.format_id}+bestaudio/best`,
@@ -445,7 +473,7 @@ function buildVideoGroups(formats = [], durationSeconds = 0) {
       needsRecode,
       ext: normalizeExt(format.ext, "mp4"),
       container,
-      label: progressive ? `${labelBase} (Recommended)` : labelBase,
+      label: isRecommended ? `${labelBase} (Recommended)` : labelBase,
       note,
       qualityValue: format.height || 0,
       sizeBytes,
