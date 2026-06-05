@@ -39,6 +39,51 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
       return;
     }
 
+    // Fast path: For Instagram photo/image formats with direct CDN URLs,
+    // download directly in the browser instead of proxying through the server.
+    // The user's browser isn't IP-blocked by Instagram CDN, unlike HF containers.
+    const isDirectCdnImage = format.mode === "direct" &&
+      format.selector?.startsWith("https://") &&
+      (format.ext === "jpg" || format.ext === "jpeg" || format.ext === "png" || format.ext === "webp");
+
+    if (isDirectCdnImage) {
+      setDownloading(true);
+      setDownloadProgress(0);
+      setDownloadStatus("Downloading...");
+      try {
+        const res = await fetch(format.selector);
+        if (!res.ok) throw new Error(`CDN fetch failed: ${res.status}`);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${mediaTitle || "download"}_${format.label || "image"}.${format.ext}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setDownloadProgress(100);
+        setDownloadStatus("Completed!");
+        showToast({
+          title: "Download started",
+          description: "Image saved to your downloads folder.",
+          variant: "success"
+        });
+        setTimeout(() => {
+          setDownloading(false);
+          setDownloadStatus(null);
+          setDownloadProgress(0);
+        }, 2000);
+        return;
+      } catch (directErr) {
+        console.warn("Direct CDN download failed, falling back to server proxy:", directErr.message);
+        // Fall through to server proxy path below
+        setDownloading(false);
+        setDownloadStatus(null);
+        setDownloadProgress(0);
+      }
+    }
+
     const apiBase = process.env.NEXT_PUBLIC_API_URL ||
       (typeof window !== "undefined" &&
        (window.location.hostname === "localhost" ||

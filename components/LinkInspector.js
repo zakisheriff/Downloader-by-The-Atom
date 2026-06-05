@@ -209,8 +209,34 @@ export default function LinkInspector() {
   const handleDownloadSelected = () => {
     if (!media?.formats) return;
     const selectedFormats = media.formats.filter(f => selectedFormatIds.has(f.id));
+
     selectedFormats.forEach((format, idx) => {
-      setTimeout(() => {
+      setTimeout(async () => {
+        // Fast path: direct CDN download for images (bypasses slow server proxy)
+        const isDirectCdnImage = format.mode === "direct" &&
+          format.selector?.startsWith("https://") &&
+          (format.ext === "jpg" || format.ext === "jpeg" || format.ext === "png" || format.ext === "webp");
+
+        if (isDirectCdnImage) {
+          try {
+            const res = await fetch(format.selector);
+            if (!res.ok) throw new Error(`CDN fetch failed: ${res.status}`);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${media.title || "download"}_${format.label || "image"}.${format.ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            return;
+          } catch (directErr) {
+            console.warn("Direct CDN download failed for bulk item, falling back to server proxy:", directErr.message);
+          }
+        }
+
+        // Fallback: server proxy via iframe
         const downloadParams = new URLSearchParams({
           url: media.sourceUrl,
           format: format.selector,
@@ -219,14 +245,12 @@ export default function LinkInspector() {
           formatId: format.id
         });
         const downloadUrl = `${apiBase}/api/media/download?${downloadParams.toString()}`;
-        
-        // Trigger download via iframe
         const iframe = document.createElement("iframe");
         iframe.style.display = "none";
         iframe.src = downloadUrl;
         document.body.appendChild(iframe);
         setTimeout(() => document.body.removeChild(iframe), 5000);
-      }, idx * 400);
+      }, idx * 300);
     });
 
     showToast({

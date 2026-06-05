@@ -813,19 +813,25 @@ async function fetchInstagramMediaInfo(shortcode) {
     console.warn("fetchInstagramMediaInfo: No Instagram cookies found. Request may fail.");
   }
 
-  // Step 1: Try native fetch for each URL
-  for (const url of urls) {
-    console.log(`fetchInstagramMediaInfo: Trying native fetch: ${url}`);
-    try {
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const item = data.items?.[0] || data.graphql?.shortcode_media;
-      if (item) return item;
-      throw new Error("No media items returned.");
-    } catch (e) {
-      console.warn(`fetchInstagramMediaInfo: Native fetch failed for ${url}:`, e.message);
+  const isHuggingFace = Boolean(process.env.SPACE_ID || process.env.SPACE_HOST);
+
+  // Step 1: Try native fetch (skip on Hugging Face — Node.js fetch always times out there)
+  if (!isHuggingFace) {
+    for (const url of urls) {
+      console.log(`fetchInstagramMediaInfo: Trying native fetch: ${url}`);
+      try {
+        const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const item = data.items?.[0] || data.graphql?.shortcode_media;
+        if (item) return item;
+        throw new Error("No media items returned.");
+      } catch (e) {
+        console.warn(`fetchInstagramMediaInfo: Native fetch failed for ${url}:`, e.message);
+      }
     }
+  } else {
+    console.log("fetchInstagramMediaInfo: Hugging Face environment detected — skipping native fetch (known to timeout).");
   }
 
   // Step 2: Python urllib fallback (uses the same networking stack as yt-dlp)
