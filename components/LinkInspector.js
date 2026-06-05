@@ -550,6 +550,12 @@ export default function LinkInspector() {
                           );
                         })}
                       </div>
+
+                      {group.container === "IMAGE" && (
+                        <div className={styles.carouselHintText}>
+                          Tip: You can select multiple slides (or use the <strong>Select All</strong> button at the top) to download them all at once!
+                        </div>
+                      )}
                     </GlassCard>
                   ))}
                 </div>
