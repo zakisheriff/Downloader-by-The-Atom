@@ -791,8 +791,16 @@ async function getInstagramCookieString() {
 
 async function fetchInstagramMediaInfo(shortcode) {
   const mediaId = shortcodeToId(shortcode);
-  const url = `https://www.instagram.com/api/v1/media/${mediaId}/info/`;
-  console.log(`fetchInstagramMediaInfo: Querying Instagram API for shortcode ${shortcode} (ID: ${mediaId})`);
+  
+  // Try endpoints in order of reliability on cloud/Hugging Face IPs:
+  // 1. Web JSON URL (uses public /p/ path which WAFs don't block like /api/v1/)
+  // 2. Mobile API URL (uses i.instagram.com subdomain which is often unblocked)
+  // 3. Desktop API URL (original fallback)
+  const urls = [
+    `https://www.instagram.com/p/${shortcode}/?__a=1&__d=dis`,
+    `https://i.instagram.com/api/v1/media/${mediaId}/info/`,
+    `https://www.instagram.com/api/v1/media/${mediaId}/info/`
+  ];
 
   const cookieString = await getInstagramCookieString();
   const headers = {
@@ -808,53 +816,59 @@ async function fetchInstagramMediaInfo(shortcode) {
     console.warn("fetchInstagramMediaInfo: No Instagram cookies found. Request may fail.");
   }
 
-  try {
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`Instagram API returned status ${res.status}: ${text.slice(0, 100)}`);
-    }
+  let lastError = null;
 
-    const data = await res.json();
-    const item = data.items?.[0];
-    if (!item) {
-      throw new Error("No media items returned in Instagram API response.");
-    }
-    return item;
-  } catch (fetchError) {
-    console.warn("fetchInstagramMediaInfo: Native fetch failed, attempting curl fallback...", fetchError.message);
-    
-    const curlArgs = [
-      "-s",
-      "-L",
-      "--connect-timeout", "5",
-      "-H", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "-H", "X-IG-App-ID: 936619743392459",
-      "-H", "Sec-Fetch-Dest: empty",
-      "-H", "Sec-Fetch-Mode: cors",
-      "-H", "Sec-Fetch-Site: same-origin"
-    ];
-    if (cookieString) {
-      curlArgs.push("-H", `Cookie: ${cookieString}`);
-    }
-    curlArgs.push(url);
-
+  for (const url of urls) {
+    console.log(`fetchInstagramMediaInfo: Querying Instagram API endpoint: ${url}`);
     try {
-      const { stdout } = await execFileAsync("curl", curlArgs, { timeout: 8000 });
-      if (!stdout) {
-        throw new Error("curl returned empty response.");
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        throw new Error(`HTTP status ${res.status}`);
       }
-      const data = JSON.parse(stdout);
-      const item = data.items?.[0];
+
+      const data = await res.json();
+      const item = data.items?.[0] || data.graphql?.shortcode_media;
       if (!item) {
-        throw new Error("No media items returned in Instagram API curl response.");
+        throw new Error("No media items or graphql metadata returned.");
       }
       return item;
-    } catch (curlError) {
-      console.error("fetchInstagramMediaInfo: curl fallback failed:", curlError.message);
-      throw fetchError;
+    } catch (fetchError) {
+      console.warn(`fetchInstagramMediaInfo: Native fetch failed for ${url}, attempting curl fallback...`, fetchError.message);
+      
+      const curlArgs = [
+        "-s",
+        "-L",
+        "--connect-timeout", "5",
+        "-H", "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "-H", "X-IG-App-ID: 936619743392459",
+        "-H", "Sec-Fetch-Dest: empty",
+        "-H", "Sec-Fetch-Mode: cors",
+        "-H", "Sec-Fetch-Site: same-origin"
+      ];
+      if (cookieString) {
+        curlArgs.push("-H", `Cookie: ${cookieString}`);
+      }
+      curlArgs.push(url);
+
+      try {
+        const { stdout } = await execFileAsync("curl", curlArgs, { timeout: 8000 });
+        if (!stdout) {
+          throw new Error("curl returned empty response.");
+        }
+        const data = JSON.parse(stdout);
+        const item = data.items?.[0] || data.graphql?.shortcode_media;
+        if (!item) {
+          throw new Error("No media items or graphql metadata returned in curl response.");
+        }
+        return item;
+      } catch (curlError) {
+        console.error(`fetchInstagramMediaInfo: curl fallback failed for ${url}:`, curlError.message);
+        lastError = curlError;
+      }
     }
   }
+
+  throw lastError || new Error("All Instagram API endpoints failed.");
 }
 
 function parseInstagramMediaInfo(item, sourceUrl) {
