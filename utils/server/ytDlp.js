@@ -881,9 +881,17 @@ except Exception as e:
   throw new Error("All Instagram API fetch strategies (native fetch + Python urllib) failed for all endpoints.");
 }
 
-function getInstagramDimensions(item, mediaObj) {
-  let width = mediaObj?.width || item?.original_width || 0;
-  let height = mediaObj?.height || item?.original_height || 0;
+function getInstagramDimensions(item, mediaObj, prioritizeOriginal = false) {
+  let width = 0;
+  let height = 0;
+
+  if (prioritizeOriginal) {
+    width = item?.original_width || mediaObj?.width || 0;
+    height = item?.original_height || mediaObj?.height || 0;
+  } else {
+    width = mediaObj?.width || item?.original_width || 0;
+    height = mediaObj?.height || item?.original_height || 0;
+  }
 
   if (!width || !height) {
     const url = mediaObj?.url || "";
@@ -915,7 +923,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
         const firstVideo = m.video_versions?.[0];
         const videoUrl = firstVideo?.url;
         if (videoUrl) {
-          const { width, height } = getInstagramDimensions(m, firstVideo);
+          const { width, height } = getInstagramDimensions(m, firstVideo, true);
           const minDim = width && height ? Math.min(width, height) : 1080;
           const qualitySuffix = ` - ${minDim}p`;
           formats.push({
@@ -938,7 +946,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
         const firstImage = m.image_versions2?.candidates?.[0];
         const imageUrl = firstImage?.url;
         if (imageUrl) {
-          const { width, height } = getInstagramDimensions(m, firstImage);
+          const { width, height } = getInstagramDimensions(m, firstImage, true);
           const minDim = width && height ? Math.min(width, height) : 1080;
           const qualitySuffix = ` - ${minDim}p`;
           formats.push({
@@ -960,17 +968,30 @@ function parseInstagramMediaInfo(item, sourceUrl) {
       }
     });
   } else if (item.media_type === 2) {
-    const firstVideo = item.video_versions?.[0];
-    const videoUrl = firstVideo?.url;
-    if (videoUrl) {
-      const { width, height } = getInstagramDimensions(item, firstVideo);
+    const seenDimensions = new Set();
+    const sortedVideos = [...(item.video_versions || [])].sort((a, b) => {
+      const dimA = Math.min(a.width || 0, a.height || 0);
+      const dimB = Math.min(b.width || 0, b.height || 0);
+      return dimB - dimA;
+    });
+
+    sortedVideos.forEach((video, idx) => {
+      const videoUrl = video.url;
+      if (!videoUrl) return;
+
+      const { width, height } = getInstagramDimensions(item, video, idx === 0);
       const minDim = width && height ? Math.min(width, height) : 1080;
+
+      if (seenDimensions.has(minDim)) return;
+      seenDimensions.add(minDim);
+
       const suffix = getResolutionSuffix(minDim);
-      const label = `${minDim}p${suffix}`;
+      const isRecommended = idx === 0;
+      const label = isRecommended ? `${minDim}p${suffix} (Recommended)` : `${minDim}p${suffix}`;
       const note = `${minDim}p • Ready with audio`;
-      
+
       formats.push({
-        id: `instagram:video:direct`,
+        id: `instagram:video:${minDim}:direct`,
         selector: videoUrl,
         thumbnail: item.image_versions2?.candidates?.[0]?.url,
         mode: "direct",
@@ -984,12 +1005,12 @@ function parseInstagramMediaInfo(item, sourceUrl) {
         sizeLabel: "Unknown",
         requiresServerSupport: false
       });
-    }
+    });
   } else {
     const firstImage = item.image_versions2?.candidates?.[0];
     const imageUrl = firstImage?.url;
     if (imageUrl) {
-      const { width, height } = getInstagramDimensions(item, firstImage);
+      const { width, height } = getInstagramDimensions(item, firstImage, true);
       const minDim = width && height ? Math.min(width, height) : 1080;
       const suffix = getResolutionSuffix(minDim);
       const label = `${minDim}p Image${suffix}`;
