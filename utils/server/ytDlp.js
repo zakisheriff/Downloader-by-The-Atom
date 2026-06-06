@@ -881,6 +881,21 @@ except Exception as e:
   throw new Error("All Instagram API fetch strategies (native fetch + Python urllib) failed for all endpoints.");
 }
 
+function getInstagramDimensions(item, mediaObj) {
+  let width = mediaObj?.width || item?.original_width || 0;
+  let height = mediaObj?.height || item?.original_height || 0;
+
+  if (!width || !height) {
+    const url = mediaObj?.url || "";
+    const match = url.match(/_(\d+)x(\d+)_/);
+    if (match) {
+      width = parseInt(match[1], 10);
+      height = parseInt(match[2], 10);
+    }
+  }
+  return { width, height };
+}
+
 function parseInstagramMediaInfo(item, sourceUrl) {
   const title = sanitizeFilename(
     item.caption?.text?.split("\n")[0] || `Instagram post by ${item.user?.username || "user"}`,
@@ -897,8 +912,12 @@ function parseInstagramMediaInfo(item, sourceUrl) {
       const isVideo = m.media_type === 2;
       const slideNum = idx + 1;
       if (isVideo) {
-        const videoUrl = m.video_versions?.[0]?.url;
+        const firstVideo = m.video_versions?.[0];
+        const videoUrl = firstVideo?.url;
         if (videoUrl) {
+          const { width, height } = getInstagramDimensions(m, firstVideo);
+          const minDim = width && height ? Math.min(width, height) : 1080;
+          const qualitySuffix = ` - ${minDim}p`;
           formats.push({
             id: `photo:carousel_${idx}_video:direct`,
             selector: videoUrl,
@@ -907,7 +926,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
             type: "video",
             ext: "mp4",
             container: "VIDEO",
-            label: `Slide ${slideNum} (Video)`,
+            label: `Slide ${slideNum} (Video${qualitySuffix})`,
             note: "High quality video slide",
             qualityValue: 1000 - idx,
             sizeBytes: 0,
@@ -916,8 +935,12 @@ function parseInstagramMediaInfo(item, sourceUrl) {
           });
         }
       } else {
-        const imageUrl = m.image_versions2?.candidates?.[0]?.url;
+        const firstImage = m.image_versions2?.candidates?.[0];
+        const imageUrl = firstImage?.url;
         if (imageUrl) {
+          const { width, height } = getInstagramDimensions(m, firstImage);
+          const minDim = width && height ? Math.min(width, height) : 1080;
+          const qualitySuffix = ` - ${minDim}p`;
           formats.push({
             id: `photo:carousel_${idx}_image:direct`,
             selector: imageUrl,
@@ -926,7 +949,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
             type: "video",
             ext: "jpg",
             container: "IMAGE",
-            label: `Slide ${slideNum} (Image)`,
+            label: `Slide ${slideNum} (Image${qualitySuffix})`,
             note: "High quality image slide",
             qualityValue: 1000 - idx,
             sizeBytes: 0,
@@ -937,8 +960,15 @@ function parseInstagramMediaInfo(item, sourceUrl) {
       }
     });
   } else if (item.media_type === 2) {
-    const videoUrl = item.video_versions?.[0]?.url;
+    const firstVideo = item.video_versions?.[0];
+    const videoUrl = firstVideo?.url;
     if (videoUrl) {
+      const { width, height } = getInstagramDimensions(item, firstVideo);
+      const minDim = width && height ? Math.min(width, height) : 1080;
+      const suffix = getResolutionSuffix(minDim);
+      const label = `${minDim}p${suffix}`;
+      const note = `${minDim}p • Ready with audio`;
+      
       formats.push({
         id: `instagram:video:direct`,
         selector: videoUrl,
@@ -946,18 +976,24 @@ function parseInstagramMediaInfo(item, sourceUrl) {
         mode: "direct",
         type: "video",
         ext: "mp4",
-        container: "VIDEO",
-        label: "Video (High Quality)",
-        note: "High quality video",
-        qualityValue: 1000,
+        container: "MP4",
+        label: label,
+        note: note,
+        qualityValue: minDim,
         sizeBytes: 0,
         sizeLabel: "Unknown",
         requiresServerSupport: false
       });
     }
   } else {
-    const imageUrl = item.image_versions2?.candidates?.[0]?.url;
+    const firstImage = item.image_versions2?.candidates?.[0];
+    const imageUrl = firstImage?.url;
     if (imageUrl) {
+      const { width, height } = getInstagramDimensions(item, firstImage);
+      const minDim = width && height ? Math.min(width, height) : 1080;
+      const suffix = getResolutionSuffix(minDim);
+      const label = `${minDim}p Image${suffix}`;
+      
       formats.push({
         id: `instagram:image:direct`,
         selector: imageUrl,
@@ -966,9 +1002,9 @@ function parseInstagramMediaInfo(item, sourceUrl) {
         type: "video",
         ext: "jpg",
         container: "IMAGE",
-        label: "Image (High Quality)",
+        label: label,
         note: "High quality image",
-        qualityValue: 1000,
+        qualityValue: minDim,
         sizeBytes: 0,
         sizeLabel: "Unknown",
         requiresServerSupport: false
@@ -1024,6 +1060,30 @@ export async function inspectMedia(sourceUrl) {
         const item = await fetchInstagramMediaInfo(shortcode);
         const parsed = parseInstagramMediaInfo(item, sourceUrl);
         if (parsed && parsed.formats && parsed.formats.length > 0) {
+          // Resolve missing sizes via parallel HEAD requests
+          const missingSize = parsed.formats.filter(f => f.selector && (!f.sizeBytes || f.sizeBytes === 0));
+          if (missingSize.length > 0) {
+            await Promise.allSettled(
+              missingSize.map(async (f) => {
+                try {
+                  const res = await fetch(f.selector, {
+                    method: "HEAD",
+                    signal: AbortSignal.timeout(3000),
+                    headers: {
+                      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                    }
+                  });
+                  const len = parseInt(res.headers.get("content-length") || "0", 10);
+                  if (len > 0) {
+                    f.sizeBytes = len;
+                    f.sizeLabel = formatBytes(len);
+                  }
+                } catch {
+                  // Ignore
+                }
+              })
+            );
+          }
           console.log("inspectMedia: Fast Instagram API fetch succeeded!");
           return parsed;
         }
