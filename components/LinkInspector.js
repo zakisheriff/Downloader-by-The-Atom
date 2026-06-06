@@ -148,6 +148,7 @@ export default function LinkInspector() {
      : "https://zakisheriff-downloader-backend.hf.space");
 
   const isInstagramCarousel = media?.formats?.some(f => f.id.startsWith("photo:"));
+  const isImageOnly = media?.formats?.every(f => f.type === "image");
 
   const visibleVideoGroups = (media?.formatGroups?.video || [])
     .map((group) => ({
@@ -480,7 +481,7 @@ export default function LinkInspector() {
               <p>{media.description || "Public media detected and ready for a format choice."}</p>
 
               <div className={styles.previewMeta}>
-                {!isInstagramCarousel && (
+                {!isInstagramCarousel && !isImageOnly && (
                   <div>
                     <span>Duration</span>
                     <strong>{media.durationLabel}</strong>
@@ -542,7 +543,7 @@ export default function LinkInspector() {
             {visibleVideoGroups.length ? (
               <div className={styles.groupSection}>
                 <div className={styles.sectionHeading}>
-                  <h3>{isInstagramCarousel ? "Post / Images" : "Video"}</h3>
+                  <h3>{isInstagramCarousel || isImageOnly ? "Post / Images" : "Video"}</h3>
                 </div>
 
                 <div className={styles.groupStack}>
@@ -586,7 +587,7 @@ export default function LinkInspector() {
                         })}
                       </div>
 
-                      {group.container === "IMAGE" && (
+                      {group.container === "IMAGE" && group.items.length > 1 && (
                         <div className={styles.carouselHintText}>
                           Tip: You can select multiple slides (or use the <strong>Select All</strong> button at the top) to download them all at once!
                         </div>
