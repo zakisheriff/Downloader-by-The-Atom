@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowDownToLine, Check, LoaderCircle, Music4, PlaySquare } from "lucide-react";
+import { ArrowDownToLine, Check, LoaderCircle, Music4, PlaySquare, Image } from "lucide-react";
 import { GlassButton } from "@zakisheriff/liquid-glass";
 import GlassCard from "@/components/GlassCard";
 import LoadingArcade from "@/components/LoadingArcade";
@@ -15,7 +15,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
   const pollIntervalRef = useRef(null);
   const watchdogRef = useRef(null);
   const { showToast } = useToast();
-  const Icon = format.type === "audio" ? Music4 : PlaySquare;
+  const Icon = format.type === "audio" ? Music4 : format.type === "image" ? Image : PlaySquare;
   const isBlocked = Boolean(format.disabled);
 
   useEffect(() => {
@@ -318,7 +318,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
           </div>
 
           <div className={styles.meta}>
-            <span>{format.type === "audio" ? "Audio" : "Video"}</span>
+            <span>{format.type === "audio" ? "Audio" : format.type === "image" ? "Image" : "Video"}</span>
             <span>{format.sizeLabel}</span>
             <span>{format.ext.toUpperCase()}</span>
             {isBlocked ? <span>Unavailable</span> : null}
