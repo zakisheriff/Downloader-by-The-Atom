@@ -993,7 +993,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
       formats.push({
         id: `instagram:video:${minDim}:direct`,
         selector: videoUrl,
-        thumbnail: item.image_versions2?.candidates?.[0]?.url,
+        thumbnail: null, // Set to null so we display standard video play icon like YouTube
         mode: "direct",
         type: "video",
         ext: "mp4",
@@ -1048,14 +1048,17 @@ function parseInstagramMediaInfo(item, sourceUrl) {
 
   const videoGroups = Array.from(videoGroupsMap.values());
 
+  const durationSeconds = item.video_duration || 0;
+  const durationLabel = durationSeconds > 0 ? formatDurationSeconds(durationSeconds) : "Unknown";
+
   return {
     sourceUrl,
     title,
     description: description ? description.slice(0, 180) : null,
     thumbnail,
     sourceName: "Instagram",
-    durationLabel: "Unknown",
-    durationSeconds: 0,
+    durationLabel,
+    durationSeconds,
     uploader,
     uploadDate: null,
     formats,
