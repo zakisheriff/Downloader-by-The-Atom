@@ -940,7 +940,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
     const videoUrl = item.video_versions?.[0]?.url;
     if (videoUrl) {
       formats.push({
-        id: `photo:video:direct`,
+        id: `instagram:video:direct`,
         selector: videoUrl,
         thumbnail: item.image_versions2?.candidates?.[0]?.url,
         mode: "direct",
@@ -959,7 +959,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
     const imageUrl = item.image_versions2?.candidates?.[0]?.url;
     if (imageUrl) {
       formats.push({
-        id: `photo:image:direct`,
+        id: `instagram:image:direct`,
         selector: imageUrl,
         thumbnail: imageUrl,
         mode: "direct",
