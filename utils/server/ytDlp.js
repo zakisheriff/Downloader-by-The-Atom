@@ -1006,6 +1006,29 @@ function parseInstagramMediaInfo(item, sourceUrl) {
         requiresServerSupport: false
       });
     });
+
+    // Add MP3 audio extraction format option
+    const durationSeconds = item.video_duration || 0;
+    const audioBitrate = 128; // kbps
+    const mp3SizeBytes = durationSeconds > 0
+      ? Math.round((audioBitrate * 1000 / 8) * durationSeconds)
+      : 0;
+
+    formats.push({
+      id: "instagram:audio:mp3",
+      selector: "bestaudio/best",
+      mode: "extract-audio",
+      type: "audio",
+      isAdaptive: false,
+      ext: "mp3",
+      container: "MP3",
+      label: "Best available",
+      note: "Converted to MP3 on the server",
+      qualityValue: 999,
+      sizeBytes: mp3SizeBytes,
+      sizeLabel: mp3SizeBytes > 0 ? `~${formatBytes(mp3SizeBytes)}` : "Unknown",
+      requiresServerSupport: true
+    });
   } else {
     const firstImage = item.image_versions2?.candidates?.[0];
     const imageUrl = firstImage?.url;
@@ -1035,6 +1058,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
 
   const videoGroupsMap = new Map();
   formats.forEach(format => {
+    if (format.type !== "video") return;
     const container = format.container;
     if (!videoGroupsMap.has(container)) {
       videoGroupsMap.set(container, {
@@ -1047,6 +1071,22 @@ function parseInstagramMediaInfo(item, sourceUrl) {
   });
 
   const videoGroups = Array.from(videoGroupsMap.values());
+
+  const audioGroupsMap = new Map();
+  formats.forEach(format => {
+    if (format.type !== "audio") return;
+    const container = format.container;
+    if (!audioGroupsMap.has(container)) {
+      audioGroupsMap.set(container, {
+        container,
+        type: "audio",
+        items: []
+      });
+    }
+    audioGroupsMap.get(container).items.push(format);
+  });
+
+  const audioGroups = Array.from(audioGroupsMap.values());
 
   const durationSeconds = item.video_duration || 0;
   const durationLabel = durationSeconds > 0 ? formatDurationSeconds(durationSeconds) : "Unknown";
@@ -1064,7 +1104,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
     formats,
     formatGroups: {
       video: videoGroups,
-      audio: []
+      audio: audioGroups
     },
     serverWarning: ""
   };
