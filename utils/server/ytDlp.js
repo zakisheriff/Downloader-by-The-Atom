@@ -1058,7 +1058,7 @@ function parseInstagramMediaInfo(item, sourceUrl) {
 
   const videoGroupsMap = new Map();
   formats.forEach(format => {
-    if (format.type !== "video") return;
+    if (format.type !== "video" && format.type !== "image") return;
     const container = format.container;
     if (!videoGroupsMap.has(container)) {
       videoGroupsMap.set(container, {
