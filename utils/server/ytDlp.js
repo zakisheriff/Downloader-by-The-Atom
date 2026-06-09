@@ -904,7 +904,72 @@ function getInstagramDimensions(item, mediaObj, prioritizeOriginal = false) {
   return { width, height };
 }
 
-function parseInstagramMediaInfo(item, sourceUrl) {
+function normalizeInstagramItem(raw) {
+  // Private API format (items[0]) already has the right fields — return as-is.
+  if (raw.media_type !== undefined) return raw;
+
+  // GraphQL format (graphql.shortcode_media) uses different field names.
+  // Normalize it into the private API shape so the rest of the parser works.
+  const typename = raw.__typename || "";
+  let media_type = 1; // default: image
+  if (typename === "GraphVideo") media_type = 2;
+  else if (typename === "GraphSidecar") media_type = 8;
+
+  const captionEdges = raw.edge_media_to_caption?.edges || [];
+  const captionText = captionEdges[0]?.node?.text || null;
+
+  const owner = raw.owner || {};
+  const user = { username: owner.username || null, full_name: owner.full_name || null };
+
+  // Build image_versions2 from display_url (highest quality)
+  const displayUrl = raw.display_url || null;
+  const image_versions2 = displayUrl
+    ? { candidates: [{ url: displayUrl, width: raw.dimensions?.width || 0, height: raw.dimensions?.height || 0 }] }
+    : null;
+
+  // Build video_versions from video_url
+  const videoUrl = raw.video_url || null;
+  const video_versions = videoUrl
+    ? [{ url: videoUrl, width: raw.dimensions?.width || 0, height: raw.dimensions?.height || 0 }]
+    : [];
+
+  // Build carousel_media from edge_sidecar_to_children
+  const sidecarEdges = raw.edge_sidecar_to_children?.edges || [];
+  const carousel_media = sidecarEdges.map(edge => {
+    const node = edge.node || {};
+    const nodeType = node.__typename || "";
+    const nodeMediaType = nodeType === "GraphVideo" ? 2 : 1;
+    const nodeDisplayUrl = node.display_url || null;
+    const nodeVideoUrl = node.video_url || null;
+    return {
+      media_type: nodeMediaType,
+      image_versions2: nodeDisplayUrl
+        ? { candidates: [{ url: nodeDisplayUrl, width: node.dimensions?.width || 0, height: node.dimensions?.height || 0 }] }
+        : null,
+      video_versions: nodeVideoUrl
+        ? [{ url: nodeVideoUrl, width: node.dimensions?.width || 0, height: node.dimensions?.height || 0 }]
+        : [],
+      original_width: node.dimensions?.width || 0,
+      original_height: node.dimensions?.height || 0,
+    };
+  });
+
+  return {
+    media_type,
+    user,
+    caption: captionText ? { text: captionText } : null,
+    image_versions2,
+    video_versions,
+    video_duration: raw.video_duration || 0,
+    carousel_media: media_type === 8 ? carousel_media : undefined,
+    original_width: raw.dimensions?.width || 0,
+    original_height: raw.dimensions?.height || 0,
+  };
+}
+
+function parseInstagramMediaInfo(rawItem, sourceUrl) {
+  const item = normalizeInstagramItem(rawItem);
+
   const title = sanitizeFilename(
     item.caption?.text?.split("\n")[0] || `Instagram post by ${item.user?.username || "user"}`,
     "Instagram Post"
