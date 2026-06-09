@@ -369,6 +369,22 @@ export default function LinkInspector() {
                   className={styles.iconBtn}
                   onClick={(e) => {
                     e.stopPropagation();
+                    handlePaste();
+                  }}
+                  title="Paste new link"
+                  aria-label="Paste new link from clipboard"
+                  type="button"
+                  variant="ghost"
+                  intensity={4}
+                  size="sm"
+                  style={{ minWidth: "30px", width: "30px", height: "30px", borderRadius: "50%", padding: 0 }}
+                >
+                  <Clipboard size={15} />
+                </GlassButton>
+                <GlassButton
+                  className={styles.iconBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
                     handleClear();
                   }}
                   title="Clear"
