@@ -6,7 +6,6 @@ import { execFile, spawn } from "node:child_process";
 import { mkdir, readdir, rm, writeFile, readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
-import { jobManager } from "@/lib/JobQueue";
 
 if (dns && dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder("ipv4first");
@@ -22,38 +21,36 @@ const execFileAsync = promisify(execFile);
 const YT_DLP_BIN = process.env.YT_DLP_BIN || "yt-dlp";
 const TMP_ROOT = path.join(os.tmpdir(), "fetch-by-the-atom");
 const ALLOW_YOUTUBE_ADAPTIVE = process.env.ALLOW_YOUTUBE_ADAPTIVE !== "false";
+// Optional residential/mobile proxy for outbound yt-dlp requests (e.g. http://user:pass@host:port).
+// Datacenter IPs (Vercel/Hugging Face) get blocked by YouTube far more than residential IPs;
+// routing through a proxy is the only reliable long-term fix for that.
+const YT_DLP_PROXY = process.env.YT_DLP_PROXY || "";
 
-// Track consecutive YouTube failures globally to trigger process exit / IP rotation if blocked.
-if (global.__consecutiveYoutubeFailures === undefined) {
-  global.__consecutiveYoutubeFailures = 0;
+function getProxyArg() {
+  return YT_DLP_PROXY ? ["--proxy", YT_DLP_PROXY] : [];
 }
 
-function incrementYoutubeFailures() {
-  global.__consecutiveYoutubeFailures++;
-  console.warn(`ytDlp: YouTube inspection failed. Consecutive failure count: ${global.__consecutiveYoutubeFailures}/3`);
-  
-  if (global.__consecutiveYoutubeFailures >= 3) {
-    if (jobManager.running.size === 0) {
-      if (process.uptime() < 300) {
-        console.warn("ytDlp: 3 consecutive YouTube failures detected, but server uptime is less than 5 minutes. Skipping proactive restart to avoid container crash loops.");
-        return;
-      }
-      console.warn("ytDlp: 3 consecutive YouTube failures detected and server is idle. Restarting process to rotate container IP...");
-      setTimeout(() => {
-        process.exit(1);
-      }, 1000);
-    } else {
-      console.warn(`ytDlp: 3 consecutive YouTube failures detected, but active downloads are running. Deferring restart until queue is empty.`);
-      global.__needsSelfRestart = true;
-    }
+// In-memory cache for inspectMedia results. If many users paste the same trending video,
+// we should hit YouTube once, not once per request — repeated identical requests from the
+// same server IP are a big contributor to getting rate-limited.
+const INSPECT_CACHE_TTL_MS = 10 * 60 * 1000;
+if (!global.__inspectCache) {
+  global.__inspectCache = new Map();
+}
+const inspectCache = global.__inspectCache;
+
+function getCachedInspectResult(sourceUrl) {
+  const entry = inspectCache.get(sourceUrl);
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > INSPECT_CACHE_TTL_MS) {
+    inspectCache.delete(sourceUrl);
+    return null;
   }
+  return entry.data;
 }
 
-function resetYoutubeFailures() {
-  if (global.__consecutiveYoutubeFailures > 0) {
-    console.log(`ytDlp: YouTube inspection succeeded. Resetting consecutive failures from ${global.__consecutiveYoutubeFailures} to 0.`);
-    global.__consecutiveYoutubeFailures = 0;
-  }
+function setCachedInspectResult(sourceUrl, data) {
+  inspectCache.set(sourceUrl, { data, cachedAt: Date.now() });
 }
 
 // Persist across Next.js HMR hot-module reloads in dev.
@@ -1176,6 +1173,12 @@ function parseInstagramMediaInfo(rawItem, sourceUrl) {
 }
 
 export async function inspectMedia(sourceUrl) {
+  const cached = getCachedInspectResult(sourceUrl);
+  if (cached) {
+    console.log("inspectMedia: Serving cached result, skipping YouTube/source request entirely.");
+    return cached;
+  }
+
   let stdout, stderr;
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   const isInstagram = sourceUrl && (sourceUrl.includes("instagram.com") || sourceUrl.includes("instagr.am"));
@@ -1214,6 +1217,7 @@ export async function inspectMedia(sourceUrl) {
             );
           }
           console.log("inspectMedia: Fast Instagram API fetch succeeded!");
+          setCachedInspectResult(sourceUrl, parsed);
           return parsed;
         }
       }
@@ -1222,22 +1226,17 @@ export async function inspectMedia(sourceUrl) {
     }
   }
 
+  // Keep this to at most 2 attempts. Every extra attempt is another request to YouTube from
+  // the same server IP, and stacking 4 of them per single user paste is what gets the whole
+  // server IP rate-limited — not the user's actual request volume.
   let attempts = [];
   if (isYouTube) {
     const hasCookies = await hasCookiesConfigured();
     if (hasCookies) {
-      // 1. Forced Cookies, Default (High Quality)
-      attempts.push({ useCookies: true, usePlayerClient: false, name: "Forced Cookies, Default" });
-      // 2. Forced Cookies, Safe Fallback (Reliable Bot Bypass with Cookies)
-      attempts.push({ useCookies: true, usePlayerClient: true, name: "Forced Cookies, Safe Fallback" });
-      // 3. Anonymous, Default (High Quality Fallback)
-      attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, Default" });
-      // 4. Anonymous, Safe Fallback (Low Quality, Bot Bypass)
-      attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
+      attempts.push({ useCookies: true, usePlayerClient: false, name: "Cookies, Default" });
+      attempts.push({ useCookies: true, usePlayerClient: true, name: "Cookies, Safe Fallback" });
     } else {
-      // 1. Anonymous, Default (High Quality)
       attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, Default" });
-      // 2. Anonymous, Safe Fallback (Low Quality, Bot Bypass)
       attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
     }
   } else {
@@ -1249,7 +1248,7 @@ export async function inspectMedia(sourceUrl) {
 
   for (let i = 0; i < attempts.length; i++) {
     const attempt = attempts[i];
-    
+
     // Skip forcing cookies attempt if we don't have cookies available.
     const cookiesArg = await getCookiesArg(sourceUrl, attempt.useCookies);
     if (attempt.useCookies && cookiesArg.length === 0) {
@@ -1266,59 +1265,35 @@ export async function inspectMedia(sourceUrl) {
     const execTimeout = isAnonymous ? 10000 : 14000;
 
     console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient}, Timeout: ${execTimeout}ms)`);
-    
-    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node", "--socket-timeout", socketTimeout];
+
+    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node", "--socket-timeout", socketTimeout, ...getProxyArg()];
     if (attempt.usePlayerClient) {
       args.push("--extractor-args", "youtube:player-client=web,mweb,android");
     }
     args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
 
     try {
-      const result = await execFileAsync(YT_DLP_BIN, args, { 
+      const result = await execFileAsync(YT_DLP_BIN, args, {
         maxBuffer: 20 * 1024 * 1024,
         timeout: execTimeout
       });
       stdout = result.stdout;
       stderr = result.stderr;
-
-      // If YouTube and resolved formats are only <= 360p, retry with a better configuration (if available).
-      if (isYouTube && i < attempts.length - 1) {
-        try {
-          const info = JSON.parse(stdout);
-          const rawFormats = info.formats || [];
-          const hasHighQuality = rawFormats.some(f => f.vcodec !== "none" && (f.height || 0) > 360);
-          
-          if (!hasHighQuality) {
-            console.log(`inspectMedia: Attempt '${attempt.name}' succeeded but returned only low quality (<=360p) formats. Retrying with next attempt...`);
-            continue; // Go to next attempt
-          }
-        } catch (e) {
-          // If JSON parse fails, let it fall through
-        }
-      }
-
-      // If we got here, we successfully resolved the media with acceptable quality (or have no more options).
+      // Accept the first successful result outright — don't burn another request on a
+      // quality gamble. The download step still tries a player-client fallback if needed.
       break;
     } catch (error) {
       console.error(`inspectMedia: Attempt '${attempt.name}' failed:`, error.stderr?.trim() || error.message);
       lastError = error;
-      
+
       if (error.code === "ENOENT") {
         throw createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503);
       }
-      
+
       // If it's the last attempt, let it exit loop and throw
       if (i === attempts.length - 1) {
         break;
       }
-    }
-  }
-
-  if (isYouTube) {
-    if (stdout) {
-      resetYoutubeFailures();
-    } else {
-      incrementYoutubeFailures();
     }
   }
 
@@ -1331,7 +1306,9 @@ export async function inspectMedia(sourceUrl) {
         if (shortcodeMatch) {
           const shortcode = shortcodeMatch[1];
           const item = await fetchInstagramMediaInfo(shortcode);
-          return parseInstagramMediaInfo(item, sourceUrl);
+          const parsed = parseInstagramMediaInfo(item, sourceUrl);
+          setCachedInspectResult(sourceUrl, parsed);
+          return parsed;
         }
       } catch (fallbackError) {
         console.error("inspectMedia: Instagram API fallback failed:", fallbackError.stack || fallbackError.message, fallbackError.cause);
@@ -1341,7 +1318,7 @@ export async function inspectMedia(sourceUrl) {
     const errText = lastError?.stderr?.trim() || lastError?.message || "This link could not be inspected right now.";
     if (isYouTube) {
       throw createYtError(
-        "YouTube is temporarily rate-limiting the server. We are automatically rotating our connection IP right now. Please wait 1–2 minutes and try pasting your link again.",
+        "YouTube couldn't be reached right now (it may be temporarily rate-limiting this server). Please wait a minute and try pasting your link again.",
         403
       );
     }
@@ -1396,7 +1373,7 @@ export async function inspectMedia(sourceUrl) {
     });
     const title = sanitizeFilename(info.title || "Untitled media", "Untitled media");
 
-    return {
+    const mediaResult = {
       sourceUrl,
       title,
       description: info.description ? info.description.slice(0, 180) : null,
@@ -1413,6 +1390,9 @@ export async function inspectMedia(sourceUrl) {
       },
       serverWarning
     };
+
+    setCachedInspectResult(sourceUrl, mediaResult);
+    return mediaResult;
   } catch (error) {
     if (error.statusCode) throw error;
     throw createYtError(error.message || "This link could not be inspected right now.", 400);
@@ -1420,7 +1400,7 @@ export async function inspectMedia(sourceUrl) {
 }
 
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false, usePlayerClient = true }) {
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getProxyArg()];
   if (usePlayerClient) {
     args.push("--extractor-args", "youtube:player-client=web,mweb,android");
   }
@@ -1514,8 +1494,8 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 
   const hasCookies = await hasCookiesConfigured();
   const cookiesArg = await getCookiesArg(sourceUrl, hasCookies);
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist"];
-  
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getProxyArg()];
+
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   if (isYouTube) {
     args.push("--extractor-args", "youtube:player-client=web,mweb,android");
@@ -1910,36 +1890,4 @@ export function createReadableStreamFromFile(filePath, onFinish) {
   });
 }
 
-// Register a proactive canary connection checker to verify YouTube access.
-// If it fails twice consecutively, increment consecutive failures to trigger IP rotation.
-jobManager.registerCanaryChecker(async () => {
-  const checkOne = await runCanaryCheck();
-  if (checkOne) {
-    resetYoutubeFailures();
-    return;
-  }
-
-  console.warn("ytDlp: Proactive canary check failed. Retrying in 15 seconds to filter transient hiccups...");
-  await new Promise((resolve) => setTimeout(resolve, 15000));
-
-  const checkTwo = await runCanaryCheck();
-  if (checkTwo) {
-    resetYoutubeFailures();
-    return;
-  }
-
-  console.warn("ytDlp: Double proactive canary checks failed. Server IP block or invalid cookies detected.");
-  incrementYoutubeFailures();
-});
-
-async function runCanaryCheck() {
-  try {
-    // Rick Astley - Never Gonna Give You Up (official stable video)
-    const result = await inspectMedia("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-    return Boolean(result && result.formats && result.formats.length > 0);
-  } catch (err) {
-    console.warn("ytDlp: Canary inspect attempt failed:", err.message);
-    return false;
-  }
-}
 
