@@ -1364,22 +1364,43 @@ export async function inspectMedia(sourceUrl) {
     }
     args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
 
-    try {
-      const result = await runYtdlpStreamed(args, execTimeout, attempt.name);
-      stdout = result.stdout;
-      stderr = result.stderr;
+    // curl_cffi's BoringSSL intermittently throws "curl: (35) ... invalid library" on a
+    // sub-request (player JS / client config). It's non-deterministic — the same command
+    // succeeds on a retry — and when it hits the player-JS download it cascades into a fake
+    // LOGIN_REQUIRED / "Sign in to confirm you're not a bot". yt-dlp's own retries don't
+    // cover these, so we re-run the whole command up to 3x when we see that signature.
+    let attemptError = null;
+    let succeeded = false;
+    for (let curlTry = 0; curlTry < 3; curlTry++) {
+      try {
+        const result = await runYtdlpStreamed(args, execTimeout, attempt.name);
+        stdout = result.stdout;
+        stderr = result.stderr;
+        succeeded = true;
+        break;
+      } catch (error) {
+        attemptError = error;
+        if (error.code === "ENOENT") {
+          throw createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503);
+        }
+        const isTransientCurl = /curl:\s*\(35\)|invalid library/i.test(error.stderr || "");
+        if (isTransientCurl && curlTry < 2) {
+          console.warn(`inspectMedia: Attempt '${attempt.name}' hit transient curl_cffi TLS error, retrying (${curlTry + 1}/2)...`);
+          continue;
+        }
+        break;
+      }
+    }
+
+    if (succeeded) {
       // Accept the first successful result outright — don't burn another request on a
       // quality gamble. The download step still tries a player-client fallback if needed.
       break;
-    } catch (error) {
+    } else {
       console.error(
-        `inspectMedia: Attempt '${attempt.name}' failed: killed=${error.killed} signal=${error.signal} code=${error.code} stderr=${JSON.stringify(error.stderr?.trim()?.slice(-1500))}`
+        `inspectMedia: Attempt '${attempt.name}' failed: killed=${attemptError?.killed} signal=${attemptError?.signal} code=${attemptError?.code} stderr=${JSON.stringify(attemptError?.stderr?.trim()?.slice(-1500))}`
       );
-      lastError = error;
-
-      if (error.code === "ENOENT") {
-        throw createYtError("yt-dlp is not installed on this server yet. Install yt-dlp and ffmpeg first.", 503);
-      }
+      lastError = attemptError;
 
       // If it's the last attempt, let it exit loop and throw
       if (i === attempts.length - 1) {
