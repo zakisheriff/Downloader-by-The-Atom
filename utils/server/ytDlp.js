@@ -62,6 +62,66 @@ function setCachedInspectResult(sourceUrl, data) {
   inspectCache.set(sourceUrl, { data, cachedAt: Date.now() });
 }
 
+// Run yt-dlp via spawn, capturing stdout to a buffer and streaming stderr to the console
+// LIVE (line by line). This lets us see exactly where yt-dlp hangs even when we have to
+// kill it on timeout — execFileAsync buffered stderr and lost it entirely on SIGTERM.
+function runYtdlpStreamed(args, timeoutMs, label = "") {
+  return new Promise((resolve, reject) => {
+    const child = spawn(YT_DLP_BIN, args, { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    let stderrLineBuf = "";
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      console.warn(`runYtdlpStreamed[${label}]: timeout after ${timeoutMs}ms — sending SIGKILL`);
+      child.kill("SIGKILL");
+    }, timeoutMs);
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    child.stderr.on("data", (chunk) => {
+      const text = chunk.toString();
+      stderr += text;
+      stderrLineBuf += text;
+      const lines = stderrLineBuf.split(/\r?\n/);
+      stderrLineBuf = lines.pop() || "";
+      for (const line of lines) {
+        if (line.trim()) console.log(`yt-dlp[${label}] ${line}`);
+      }
+    });
+
+    child.on("error", (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      error.stderr = stderr;
+      reject(error);
+    });
+
+    child.on("close", (code, signal) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (stderrLineBuf.trim()) console.log(`yt-dlp[${label}] ${stderrLineBuf}`);
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        const error = new Error(`yt-dlp exited with code ${code}`);
+        error.code = code;
+        error.signal = signal;
+        error.killed = signal === "SIGKILL" || signal === "SIGTERM";
+        error.stderr = stderr;
+        error.stdout = stdout;
+        reject(error);
+      }
+    });
+  });
+}
+
 // Persist across Next.js HMR hot-module reloads in dev.
 // In production this is just a regular Map on the module.
 if (!global.__activeDownloads) {
@@ -1274,17 +1334,17 @@ export async function inspectMedia(sourceUrl) {
 
     console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient}, Timeout: ${execTimeout}ms)`);
 
-    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node", "--socket-timeout", socketTimeout, ...getProxyArg(), ...getPotProviderArg()];
+    // TEMP DIAGNOSTIC: --verbose + live stderr streaming so we can see WHERE yt-dlp hangs
+    // on Hugging Face. Previous runs were killed with empty stderr because execFileAsync
+    // buffered everything and lost it on SIGTERM. We stream it live instead.
+    const args = ["--ignore-config", "--geo-bypass", "--verbose", "--js-runtimes", "node", "--socket-timeout", socketTimeout, ...getProxyArg(), ...getPotProviderArg()];
     if (attempt.usePlayerClient) {
       args.push("--extractor-args", "youtube:player-client=web,mweb,android");
     }
     args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
 
     try {
-      const result = await execFileAsync(YT_DLP_BIN, args, {
-        maxBuffer: 20 * 1024 * 1024,
-        timeout: execTimeout
-      });
+      const result = await runYtdlpStreamed(args, execTimeout, attempt.name);
       stdout = result.stdout;
       stderr = result.stderr;
       // Accept the first successful result outright — don't burn another request on a
@@ -1292,7 +1352,7 @@ export async function inspectMedia(sourceUrl) {
       break;
     } catch (error) {
       console.error(
-        `inspectMedia: Attempt '${attempt.name}' failed: killed=${error.killed} signal=${error.signal} code=${error.code} stderr=${JSON.stringify(error.stderr?.trim())} stdout=${JSON.stringify(error.stdout?.trim()?.slice(0, 500))}`
+        `inspectMedia: Attempt '${attempt.name}' failed: killed=${error.killed} signal=${error.signal} code=${error.code} stderr=${JSON.stringify(error.stderr?.trim()?.slice(-1500))}`
       );
       lastError = error;
 
