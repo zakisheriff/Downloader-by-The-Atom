@@ -30,6 +30,15 @@ function getProxyArg() {
   return YT_DLP_PROXY ? ["--proxy", YT_DLP_PROXY] : [];
 }
 
+// The bgutil PO-token provider server (started in docker-entrypoint.sh) listens on
+// 127.0.0.1:4416, but the yt-dlp plugin doesn't know that unless told explicitly via
+// extractor-args. Without this, the plugin's request to the server never gets a response
+// and yt-dlp hangs indefinitely (confirmed via diagnostic logs: SIGTERM-killed with zero
+// stdout/stderr at both 14s and 30s timeouts — a true hang, not a slow request).
+function getPotProviderArg() {
+  return ["--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416"];
+}
+
 // In-memory cache for inspectMedia results. If many users paste the same trending video,
 // we should hit YouTube once, not once per request — repeated identical requests from the
 // same server IP are a big contributor to getting rate-limited.
@@ -1265,7 +1274,7 @@ export async function inspectMedia(sourceUrl) {
 
     console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient}, Timeout: ${execTimeout}ms)`);
 
-    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node", "--socket-timeout", socketTimeout, ...getProxyArg()];
+    const args = ["--ignore-config", "--geo-bypass", "--no-warnings", "--js-runtimes", "node", "--socket-timeout", socketTimeout, ...getProxyArg(), ...getPotProviderArg()];
     if (attempt.usePlayerClient) {
       args.push("--extractor-args", "youtube:player-client=web,mweb,android");
     }
@@ -1401,7 +1410,7 @@ export async function inspectMedia(sourceUrl) {
 }
 
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false, usePlayerClient = true }) {
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getProxyArg()];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getProxyArg(), ...getPotProviderArg()];
   if (usePlayerClient) {
     args.push("--extractor-args", "youtube:player-client=web,mweb,android");
   }
@@ -1495,7 +1504,7 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 
   const hasCookies = await hasCookiesConfigured();
   const cookiesArg = await getCookiesArg(sourceUrl, hasCookies);
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getProxyArg()];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getProxyArg(), ...getPotProviderArg()];
 
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   if (isYouTube) {
