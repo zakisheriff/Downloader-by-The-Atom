@@ -39,6 +39,18 @@ function getPotProviderArg() {
   return ["--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416"];
 }
 
+// Impersonate a real Chrome TLS/HTTP fingerprint via curl_cffi. Datacenter IPs (HF/Vercel)
+// get their plain-Python TLS handshake dropped by YouTube ("TLS/SSL connection has been
+// closed (EOF)") before any HTTP response — confirmed in the live verbose logs. Mimicking
+// Chrome's fingerprint makes YouTube accept the connection. Can be disabled via env if a
+// build ever ships without curl_cffi.
+const YT_DLP_IMPERSONATE = process.env.YT_DLP_IMPERSONATE || "chrome";
+function getImpersonateArg() {
+  return YT_DLP_IMPERSONATE && YT_DLP_IMPERSONATE !== "off"
+    ? ["--impersonate", YT_DLP_IMPERSONATE]
+    : [];
+}
+
 // In-memory cache for inspectMedia results. If many users paste the same trending video,
 // we should hit YouTube once, not once per request — repeated identical requests from the
 // same server IP are a big contributor to getting rate-limited.
@@ -1337,7 +1349,7 @@ export async function inspectMedia(sourceUrl) {
     // TEMP DIAGNOSTIC: --verbose + live stderr streaming so we can see WHERE yt-dlp hangs
     // on Hugging Face. Previous runs were killed with empty stderr because execFileAsync
     // buffered everything and lost it on SIGTERM. We stream it live instead.
-    const args = ["--ignore-config", "--geo-bypass", "--verbose", "--js-runtimes", "node", "--socket-timeout", socketTimeout, ...getProxyArg(), ...getPotProviderArg()];
+    const args = ["--ignore-config", "--geo-bypass", "--verbose", "--js-runtimes", "node", "--socket-timeout", socketTimeout, ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
     if (attempt.usePlayerClient) {
       args.push("--extractor-args", "youtube:player-client=web,mweb,android");
     }
@@ -1470,7 +1482,7 @@ export async function inspectMedia(sourceUrl) {
 }
 
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false, usePlayerClient = true }) {
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getProxyArg(), ...getPotProviderArg()];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
   if (usePlayerClient) {
     args.push("--extractor-args", "youtube:player-client=web,mweb,android");
   }
@@ -1564,7 +1576,7 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 
   const hasCookies = await hasCookiesConfigured();
   const cookiesArg = await getCookiesArg(sourceUrl, hasCookies);
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getProxyArg(), ...getPotProviderArg()];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
 
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   if (isYouTube) {

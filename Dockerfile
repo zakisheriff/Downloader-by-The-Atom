@@ -10,8 +10,11 @@ RUN apt-get update && \
 
 # Create a virtual environment for yt-dlp to avoid PEP 668 restrictions and install yt-dlp
 # plus the bgutil PO-token provider plugin (needed below to bypass YouTube's bot check).
+# curl_cffi gives yt-dlp browser-TLS impersonation: from datacenter IPs (HF/Vercel) YouTube
+# drops the plain Python TLS handshake with "TLS/SSL connection has been closed (EOF)" before
+# any HTTP response. Impersonating Chrome's TLS fingerprint makes YouTube accept the connection.
 RUN python3 -m venv /usr/local/yt-dlp-venv && \
-    /usr/local/yt-dlp-venv/bin/pip install --no-cache-dir -U "yt-dlp[default]" "bgutil-ytdlp-pot-provider" && \
+    /usr/local/yt-dlp-venv/bin/pip install --no-cache-dir -U "yt-dlp[default]" "bgutil-ytdlp-pot-provider" "curl_cffi" && \
     ln -s /usr/local/yt-dlp-venv/bin/yt-dlp /usr/local/bin/yt-dlp
 
 # Datacenter IPs (Hugging Face/Vercel) get blocked by YouTube with "Sign in to confirm
