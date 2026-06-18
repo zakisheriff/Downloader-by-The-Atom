@@ -1283,7 +1283,9 @@ export async function inspectMedia(sourceUrl) {
       // quality gamble. The download step still tries a player-client fallback if needed.
       break;
     } catch (error) {
-      console.error(`inspectMedia: Attempt '${attempt.name}' failed:`, error.stderr?.trim() || error.message);
+      console.error(
+        `inspectMedia: Attempt '${attempt.name}' failed: killed=${error.killed} signal=${error.signal} code=${error.code} stderr=${JSON.stringify(error.stderr?.trim())} stdout=${JSON.stringify(error.stdout?.trim()?.slice(0, 500))}`
+      );
       lastError = error;
 
       if (error.code === "ENOENT") {
