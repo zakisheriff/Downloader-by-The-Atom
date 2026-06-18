@@ -36,6 +36,8 @@ RUN npm ci
 # Copy the rest of the application
 COPY . .
 
+RUN chmod +x docker-entrypoint.sh
+
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=7860
@@ -48,5 +50,5 @@ RUN npm run build
 # Expose port
 EXPOSE 7860
 
-# Start server
-CMD ["npm", "start"]
+# Start server (also launches the bgutil PO-token provider in the background — see script)
+CMD ["./docker-entrypoint.sh"]
