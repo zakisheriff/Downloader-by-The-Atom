@@ -1341,22 +1341,26 @@ export async function inspectMedia(sourceUrl) {
     // empty stdout/stderr) killing yt-dlp before it finished — not YouTube rejecting the request.
     // The PO-token round trip plus cookie auth plus HF's network legitimately takes longer than
     // the previous 10-14s budget. Give it real room instead of misreporting this as rate-limiting.
-    const socketTimeout = "15";
-    const execTimeout = 30000;
+    // Deno JS-challenge solving plus the PO-token round trip legitimately takes 20-40s on HF.
+    // The old 30s budget was killing requests mid-"Downloading player". Give it real room.
+    const socketTimeout = "20";
+    const execTimeout = 60000;
 
     console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient}, Timeout: ${execTimeout}ms)`);
 
     // TEMP DIAGNOSTIC: --verbose + live stderr streaming so we can see WHERE yt-dlp hangs
     // on Hugging Face. Previous runs were killed with empty stderr because execFileAsync
     // buffered everything and lost it on SIGTERM. We stream it live instead.
-    const args = ["--ignore-config", "--geo-bypass", "--verbose", "--js-runtimes", "deno", "--socket-timeout", socketTimeout, ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
-    // Use yt-dlp's full default client set so the complete adaptive format ladder (720p/1080p/
-    // 1440p/4K, which are video-only and need merging) comes through, not just the 360p
-    // progressive stream. The fallback widens to android/mweb for videos the default set misses.
+    // --extractor-retries rides out the intermittent curl_cffi "TLS connect error: invalid
+    // library" that otherwise fails signature solving and strips formats.
+    const args = ["--ignore-config", "--geo-bypass", "--verbose", "--extractor-retries", "3", "--js-runtimes", "deno", "--socket-timeout", socketTimeout, ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
+    // tv,web is the client set confirmed to return usable formats from HF without being forced
+    // into SABR (which strips URLs and leaves only images, as the web/web_safari clients do).
+    // The fallback widens to android/mweb for videos the primary set misses.
     if (attempt.usePlayerClient) {
       args.push("--extractor-args", "youtube:player-client=android,mweb,web");
     } else {
-      args.push("--extractor-args", "youtube:player-client=default");
+      args.push("--extractor-args", "youtube:player-client=tv,web");
     }
     args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
 
@@ -1493,7 +1497,7 @@ function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, rec
   if (usePlayerClient) {
     args.push("--extractor-args", "youtube:player-client=android,mweb,web");
   } else {
-    args.push("--extractor-args", "youtube:player-client=default");
+    args.push("--extractor-args", "youtube:player-client=tv,web");
   }
 
   // Optimize download performance by writing directly to final file & skipping unnecessary disk/metadata tasks
@@ -1589,7 +1593,7 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   if (isYouTube) {
-    args.push("--extractor-args", "youtube:player-client=default");
+    args.push("--extractor-args", "youtube:player-client=tv,web");
   }
 
   args.push("-f", selector || "best", "-o", "-", sourceUrl);
