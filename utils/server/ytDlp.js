@@ -39,6 +39,44 @@ function getPotProviderArg() {
   return ["--extractor-args", "youtubepot-bgutilhttp:base_url=http://127.0.0.1:4416"];
 }
 
+// The right YouTube player client depends on whether a PO-token provider is reachable:
+//
+//   • Production (Docker) runs the bgutil POT server on 127.0.0.1:4416. With a PO token the
+//     standard "tv,web" clients return the full adaptive ladder (up to 4K) and clear bot checks.
+//   • Local dev usually has no POT server. There, "tv_embedded" is the only client that exposes
+//     the full ladder without a PO token — but it was removed in newer yt-dlp builds and prints
+//     'Skipping unsupported client "tv_embedded"'. Since prod always has POT, we never reach for
+//     tv_embedded there, sidestepping that incompatibility.
+//
+// We probe the POT server once (result cached). The probe is async; inspectMedia awaits it
+// before building args, and the sync builders read the cached value (defaulting to the POT
+// path, which is the safe choice for any download that runs without a prior inspect).
+let potAvailableCached = null;
+async function ensurePotProbed() {
+  if (potAvailableCached !== null) return potAvailableCached;
+  try {
+    // Any HTTP response (even 404) means the server is up. fetch only throws on a refused
+    // connection or timeout, which is exactly the "no POT server" case we want to detect.
+    await fetch("http://127.0.0.1:4416/ping", { method: "GET", signal: AbortSignal.timeout(1500) });
+    potAvailableCached = true;
+  } catch {
+    potAvailableCached = false;
+  }
+  console.log(`ensurePotProbed: PO-token provider ${potAvailableCached ? "reachable" : "NOT reachable"} — using ${getPrimaryYouTubeClient()} as primary YouTube client.`);
+  return potAvailableCached;
+}
+
+// Primary client for the high-quality attempt. Defaults to the POT path ("tv,web") until the
+// probe has run, so it's never wrong on production.
+function getPrimaryYouTubeClient() {
+  return potAvailableCached === false ? "tv_embedded" : "tv,web";
+}
+
+// Fallback client set for the second attempt — widens reach for videos the primary set misses.
+function getFallbackYouTubeClient() {
+  return "android,mweb,web";
+}
+
 // Impersonate a real Chrome TLS/HTTP fingerprint via curl_cffi. Datacenter IPs (HF/Vercel)
 // get their plain-Python TLS handshake dropped by YouTube ("TLS/SSL connection has been
 // closed (EOF)") before any HTTP response — confirmed in the live verbose logs. Mimicking
@@ -1343,6 +1381,8 @@ export async function inspectMedia(sourceUrl) {
   // server IP rate-limited — not the user's actual request volume.
   let attempts = [];
   if (isYouTube) {
+    // Probe the POT provider once so getPrimaryYouTubeClient() picks the right client below.
+    await ensurePotProbed();
     const hasCookies = await hasCookiesConfigured();
     if (hasCookies) {
       attempts.push({ useCookies: true, usePlayerClient: false, name: "Cookies, Default" });
@@ -1385,15 +1425,13 @@ export async function inspectMedia(sourceUrl) {
     // --extractor-retries rides out the intermittent curl_cffi "TLS connect error: invalid
     // library" that otherwise fails signature solving and strips formats.
     const args = ["--ignore-config", "--geo-bypass", "--verbose", "--extractor-retries", "3", "--js-runtimes", "deno", "--socket-timeout", socketTimeout, ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
-    // tv_embedded returns the full adaptive ladder (up to 2160p/4K) over plain https with no
-    // PO token required, where tv/web alone often return only the 360p progressive format.
-    // It MUST be used alone: combining it with web/tv in one player-client list makes yt-dlp
-    // collapse back to the 360p-only set (confirmed). The Safe Fallback attempt uses the
-    // proven tv,web set for videos/environments where tv_embedded gets SABR'd or returns nothing.
+    // Primary attempt uses the POT-aware client (tv,web with a PO token on prod; tv_embedded
+    // locally where there's no POT) — both expose the full adaptive ladder up to 4K. The Safe
+    // Fallback widens to android/mweb for videos the primary set misses.
     if (attempt.usePlayerClient) {
-      args.push("--extractor-args", "youtube:player-client=tv,web");
+      args.push("--extractor-args", `youtube:player-client=${getFallbackYouTubeClient()}`);
     } else {
-      args.push("--extractor-args", "youtube:player-client=tv_embedded");
+      args.push("--extractor-args", `youtube:player-client=${getPrimaryYouTubeClient()}`);
     }
     args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
 
@@ -1547,12 +1585,12 @@ export async function inspectMedia(sourceUrl) {
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false, usePlayerClient = true }) {
   const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "deno", "--no-warnings", "--no-playlist", ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
   // Match the client set used in inspectMedia so the selected format IDs resolve at download
-  // time. tv_embedded (used alone) exposes the full adaptive ladder up to 4K; the Safe
-  // Fallback uses tv,web. They must not be combined or yt-dlp collapses to the 360p-only set.
+  // time. Primary uses the POT-aware client (tv,web on prod, tv_embedded locally); the Safe
+  // Fallback widens to android/mweb.
   if (usePlayerClient) {
-    args.push("--extractor-args", "youtube:player-client=tv,web");
+    args.push("--extractor-args", `youtube:player-client=${getFallbackYouTubeClient()}`);
   } else {
-    args.push("--extractor-args", "youtube:player-client=tv_embedded");
+    args.push("--extractor-args", `youtube:player-client=${getPrimaryYouTubeClient()}`);
   }
 
   // Optimize download performance by writing directly to final file & skipping unnecessary disk/metadata tasks
@@ -1648,7 +1686,8 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   if (isYouTube) {
-    args.push("--extractor-args", "youtube:player-client=tv_embedded");
+    await ensurePotProbed();
+    args.push("--extractor-args", `youtube:player-client=${getPrimaryYouTubeClient()}`);
   }
 
   args.push("-f", selector || "best", "-o", "-", sourceUrl);
@@ -1690,7 +1729,9 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 
 export async function prepareDownloadFile({ sourceUrl, selector, mode, ext, downloadId, recode = false }) {
   const isDirectUrl = selector && (selector.startsWith("http://") || selector.startsWith("https://"));
-  
+  // Ensure the POT probe has run so buildDownloadArgs (sync) reads the correct cached client.
+  await ensurePotProbed();
+
   if (isDirectUrl) {
     const outputDir = await createTempOutputDir();
     const title = sourceUrl.includes("instagram.com") ? "Instagram_Post" : "download";
