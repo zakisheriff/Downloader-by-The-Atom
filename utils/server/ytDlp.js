@@ -1256,13 +1256,12 @@ export async function inspectMedia(sourceUrl) {
       continue;
     }
 
-    const isAnonymous = !attempt.useCookies;
-    // The bgutil PO-token provider spawns a short-lived Node process per request to fetch
-    // a token before yt-dlp can talk to YouTube, which adds a couple seconds of latency on
-    // top of the network round trip. The previous 4s/5s anonymous timeouts were tight enough
-    // to cut that off early and misreport it as a YouTube rate limit.
-    const socketTimeout = "8";
-    const execTimeout = isAnonymous ? 10000 : 14000;
+    // Confirmed via diagnostic logging that failures here were our own exec timeout (SIGTERM,
+    // empty stdout/stderr) killing yt-dlp before it finished — not YouTube rejecting the request.
+    // The PO-token round trip plus cookie auth plus HF's network legitimately takes longer than
+    // the previous 10-14s budget. Give it real room instead of misreporting this as rate-limiting.
+    const socketTimeout = "15";
+    const execTimeout = 30000;
 
     console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient}, Timeout: ${execTimeout}ms)`);
 
