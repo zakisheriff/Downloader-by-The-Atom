@@ -1028,6 +1028,128 @@ except Exception as e:
   throw new Error("All Instagram API fetch strategies (native fetch + Python urllib) failed for all endpoints.");
 }
 
+// Generic Instagram private-API GET that mirrors fetchInstagramMediaInfo's networking: native
+// fetch first (skipped on Hugging Face, where it times out), then a Python urllib fallback that
+// shares yt-dlp's working network stack. Returns the parsed JSON object for the given endpoint.
+async function fetchInstagramJson(url) {
+  const cookieString = await getInstagramCookieString();
+  const headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "X-IG-App-ID": "936619743392459",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin"
+  };
+  if (cookieString) {
+    headers["Cookie"] = cookieString;
+  } else {
+    console.warn("fetchInstagramJson: No Instagram cookies found. Request may fail.");
+  }
+
+  const isHuggingFace = Boolean(process.env.SPACE_ID || process.env.SPACE_HOST);
+
+  if (!isHuggingFace) {
+    try {
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+      if (res.ok) return await res.json();
+      console.warn(`fetchInstagramJson: Native fetch HTTP ${res.status} for ${url}`);
+    } catch (e) {
+      console.warn(`fetchInstagramJson: Native fetch failed for ${url}:`, e.message);
+    }
+  }
+
+  // Python urllib fallback (same stack as yt-dlp — works on Hugging Face where Node fetch can't).
+  const pyScript = `
+import urllib.request, json, sys, ssl
+ctx = ssl.create_default_context()
+headers = json.loads(sys.argv[1])
+req = urllib.request.Request(sys.argv[2], headers=headers)
+try:
+    resp = urllib.request.urlopen(req, timeout=8, context=ctx)
+    sys.stdout.write(resp.read().decode('utf-8'))
+except Exception as e:
+    sys.stderr.write(str(e))
+    sys.exit(1)
+`.trim();
+
+  const { stdout, stderr } = await execFileAsync("python3", ["-c", pyScript, JSON.stringify(headers), url], {
+    timeout: 12000,
+    maxBuffer: 5 * 1024 * 1024
+  });
+  if (!stdout || !stdout.trim()) {
+    throw new Error(stderr ? `Python error: ${stderr.trim()}` : "Python returned empty response.");
+  }
+  return JSON.parse(stdout);
+}
+
+// Fetch comments for an Instagram post/reel. Pages through a few times so a specific linked
+// comment has a chance to appear. Returns the post media plus a flat list of comments.
+export async function fetchInstagramComments(shortcode, wantedCommentId = "") {
+  const mediaId = shortcodeToId(shortcode);
+
+  // Pull the post info (for caption + author context). Best-effort — comments still work without it.
+  let post = null;
+  try {
+    const item = await fetchInstagramMediaInfo(shortcode);
+    post = {
+      caption: item?.caption?.text || item?.edge_media_to_caption?.edges?.[0]?.node?.text || "",
+      author: item?.user?.username || item?.owner?.username || "",
+      thumbnail:
+        item?.image_versions2?.candidates?.[0]?.url ||
+        item?.display_url ||
+        item?.thumbnail_src ||
+        null
+    };
+  } catch (e) {
+    console.warn("fetchInstagramComments: could not load post info:", e.message);
+  }
+
+  const collected = [];
+  const seen = new Set();
+  let minId = "";
+  // Up to 4 pages (~ a few hundred comments) so a linked comment is likely captured without
+  // hammering Instagram. Stop early once we find the specifically-requested comment.
+  for (let page = 0; page < 4; page++) {
+    const url =
+      `https://i.instagram.com/api/v1/media/${mediaId}/comments/?can_support_threading=true&permalink_enabled=false` +
+      (minId ? `&min_id=${encodeURIComponent(minId)}` : "");
+    let data;
+    try {
+      data = await fetchInstagramJson(url);
+    } catch (e) {
+      console.warn(`fetchInstagramComments: page ${page} failed:`, e.message);
+      break;
+    }
+
+    const pageComments = data?.comments || [];
+    for (const c of pageComments) {
+      const id = String(c.pk || c.id || "");
+      if (id && seen.has(id)) continue;
+      if (id) seen.add(id);
+      collected.push({
+        id,
+        username: c.user?.username || "unknown",
+        text: c.text || "",
+        likeCount: c.comment_like_count || 0,
+        createdAt: c.created_at || c.created_at_utc || 0
+      });
+    }
+
+    if (wantedCommentId && seen.has(String(wantedCommentId))) break;
+    minId = data?.next_min_id || data?.next_max_id || "";
+    if (!minId || pageComments.length === 0) break;
+  }
+
+  if (collected.length === 0) {
+    throw createYtError(
+      "Couldn't load comments for this post. It may be private, comments may be disabled, or the Instagram cookies on the server have expired.",
+      502
+    );
+  }
+
+  return { post, comments: collected };
+}
+
 function getInstagramDimensions(item, mediaObj, prioritizeOriginal = false) {
   let width = 0;
   let height = 0;
@@ -1332,6 +1454,18 @@ export async function inspectMedia(sourceUrl) {
   let stdout, stderr;
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   const isInstagram = sourceUrl && (sourceUrl.includes("instagram.com") || sourceUrl.includes("instagr.am"));
+
+  // YouTube actively blocks datacenter IPs (Hugging Face/Vercel) at the TLS layer, so YouTube
+  // downloads only work from a residential IP (local dev). Rather than make hosted users wait
+  // through a long failing extraction, short-circuit with a clear message. Set DISABLE_YOUTUBE
+  // = "true" on the hosted environment to enable this; it stays off for local dev so YouTube
+  // keeps working there. Instagram and other sources are unaffected.
+  if (isYouTube && process.env.DISABLE_YOUTUBE === "true") {
+    throw createYtError(
+      "YouTube downloads aren't available on the hosted version (YouTube blocks our server's IP). They work when running the app locally. Instagram and other links still work here.",
+      503
+    );
+  }
 
   if (isInstagram) {
     console.log("inspectMedia: Instagram link detected. Trying fast Instagram API fetch first...");

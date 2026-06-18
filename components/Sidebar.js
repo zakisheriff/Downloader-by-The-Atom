@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Download, SlidersHorizontal, BookOpen, X, Coffee } from "lucide-react";
+import { Download, SlidersHorizontal, BookOpen, X, Coffee, MessageSquare } from "lucide-react";
 import { GlassButton } from "@zakisheriff/liquid-glass";
 import styles from "@/components/Sidebar.module.css";
 
 const navigation = [
   { label: "Downloader", href: "/dashboard", icon: Download },
+  { label: "IG Comments", href: "/instagram-comments", icon: MessageSquare },
   { label: "How it works", href: "/blog", icon: BookOpen },
 ];
 

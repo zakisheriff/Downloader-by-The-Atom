@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Clipboard, Copy, Link2, X } from "lucide-react";
+import { ArrowRight, Check, Clipboard, Copy, Instagram, Link2, X } from "lucide-react";
 import styles from "@/components/HeroSection.module.css";
 import { useGlassEffect, GlassButton, LiquidGlassFilter } from "@zakisheriff/liquid-glass";
 import { isValidSourceUrl } from "@/utils/helpers";
@@ -196,13 +196,15 @@ export default function HeroSection() {
           <GlassButton
             onClick={(e) => {
               e.stopPropagation();
-              router.push("/blog");
+              router.push("/instagram-comments");
             }}
             size="md"
             intensity={6}
             className={styles.topNavLinkGlass}
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
           >
-            How it works
+            <Instagram size={16} />
+            Comments
           </GlassButton>
           <GlassButton
             onClick={(e) => {

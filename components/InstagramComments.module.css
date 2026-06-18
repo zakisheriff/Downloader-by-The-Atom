@@ -1,0 +1,217 @@
+.page {
+  display: grid;
+  gap: 20px;
+}
+
+.hero,
+.stateCard,
+.errorCard,
+.warningCard,
+.captionCard {
+  padding: 24px;
+}
+
+.hero {
+  display: grid;
+  gap: 12px;
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  padding: 0 6px;
+}
+
+.sub {
+  margin: 0;
+  padding: 0 6px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+.inputCard {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.inputWrap {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px;
+  flex: 1;
+}
+
+.inputWrap svg {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.inputWrap input {
+  flex: 1;
+  width: 100%;
+  min-height: 44px;
+  border: 0 !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.iconBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  color: var(--text);
+}
+
+.primaryButton {
+  min-width: 160px;
+  min-height: 56px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  gap: 10px;
+}
+
+.stateCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stateCard p,
+.errorCard p,
+.warningCard p,
+.captionCard p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.stateCard strong,
+.errorCard strong,
+.warningCard strong {
+  display: block;
+}
+
+.results {
+  display: grid;
+  gap: 16px;
+}
+
+.resultsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.resultsHeader h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.commentList {
+  display: grid;
+  gap: 12px;
+}
+
+.commentRow {
+  position: relative;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.commentHighlight {
+  border-color: rgba(225, 48, 108, 0.45);
+  background: rgba(225, 48, 108, 0.06);
+}
+
+.commentMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+}
+
+.commentMeta strong {
+  color: var(--text);
+}
+
+.commentMeta span {
+  color: var(--muted);
+}
+
+.linkedTag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(225, 48, 108, 0.12);
+  color: #c13584 !important;
+  font-weight: 600;
+}
+
+.commentText {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.copyBtn {
+  margin-top: 10px;
+  gap: 6px;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .inputCard {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primaryButton {
+    width: 100%;
+  }
+}
