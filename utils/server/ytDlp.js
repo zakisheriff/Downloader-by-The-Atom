@@ -2,7 +2,7 @@ import os from "node:os";
 import path from "node:path";
 import dns from "node:dns";
 import { createReadStream, existsSync } from "node:fs";
-import { execFile, spawn } from "node:child_process";
+import { execFile, execFileSync, spawn } from "node:child_process";
 import { mkdir, readdir, rm, writeFile, readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { promisify } from "node:util";
@@ -45,10 +45,37 @@ function getPotProviderArg() {
 // Chrome's fingerprint makes YouTube accept the connection. Can be disabled via env if a
 // build ever ships without curl_cffi.
 const YT_DLP_IMPERSONATE = process.env.YT_DLP_IMPERSONATE || "chrome";
+
+// Whether the requested impersonate target is actually usable. curl_cffi (the backend that
+// powers --impersonate) isn't installed in every environment — notably some local/Homebrew
+// yt-dlp builds. Passing --impersonate when the target is unavailable makes yt-dlp abort
+// immediately ("Impersonate target ... is not available"), breaking every request. We probe
+// once (lazily, result cached) and silently drop the flag when the target can't be satisfied,
+// so the app still works locally while keeping the Chrome fingerprint on datacenter IPs.
+let impersonateAvailable = null;
+function isImpersonateAvailable() {
+  if (!YT_DLP_IMPERSONATE || YT_DLP_IMPERSONATE === "off") return false;
+  if (impersonateAvailable === null) {
+    try {
+      const stdout = execFileSync(YT_DLP_BIN, ["--list-impersonate-targets"], { encoding: "utf8" });
+      const target = YT_DLP_IMPERSONATE.toLowerCase();
+      impersonateAvailable = stdout
+        .split("\n")
+        // A target line is only usable if it does NOT say "(unavailable)".
+        .some((line) => line.toLowerCase().includes(target) && !line.toLowerCase().includes("unavailable"));
+      if (!impersonateAvailable) {
+        console.warn(`getImpersonateArg: impersonate target "${YT_DLP_IMPERSONATE}" is unavailable (curl_cffi missing?). Proceeding without it.`);
+      }
+    } catch (err) {
+      console.warn("getImpersonateArg: could not probe impersonate targets, proceeding without it:", err?.message || err);
+      impersonateAvailable = false;
+    }
+  }
+  return impersonateAvailable;
+}
+
 function getImpersonateArg() {
-  return YT_DLP_IMPERSONATE && YT_DLP_IMPERSONATE !== "off"
-    ? ["--impersonate", YT_DLP_IMPERSONATE]
-    : [];
+  return isImpersonateAvailable() ? ["--impersonate", YT_DLP_IMPERSONATE] : [];
 }
 
 // In-memory cache for inspectMedia results. If many users paste the same trending video,
@@ -695,9 +722,13 @@ function applyServerAvailability(formats, { serverWarning = "", sourceUrl = "", 
   const blockAdaptiveYouTube = !ALLOW_YOUTUBE_ADAPTIVE && (
     isYouTubeLikeSource(sourceUrl) || isYouTubeLikeSource(sourceName)
   );
+  // Only the explicit env-based block disables formats. A PO-token/SABR warning in stderr is
+  // NOT a reason to disable: with the tv_embedded client the adaptive formats come back with
+  // real https URLs that merge fine via ffmpeg, so disabling them on a soft warning hid usable
+  // 1440p/4K qualities. The warning is still surfaced separately as an informational note.
   const adaptiveReason = blockAdaptiveYouTube
     ? "Higher YouTube qualities like 1080p, 1440p, and 4K are disabled on this server because they need extra YouTube download support. Use a direct quality here, or upgrade the server setup first."
-    : serverWarning;
+    : "";
 
   if (!adaptiveReason) {
     return formats;
@@ -1354,13 +1385,15 @@ export async function inspectMedia(sourceUrl) {
     // --extractor-retries rides out the intermittent curl_cffi "TLS connect error: invalid
     // library" that otherwise fails signature solving and strips formats.
     const args = ["--ignore-config", "--geo-bypass", "--verbose", "--extractor-retries", "3", "--js-runtimes", "deno", "--socket-timeout", socketTimeout, ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
-    // tv,web is the client set confirmed to return usable formats from HF without being forced
-    // into SABR (which strips URLs and leaves only images, as the web/web_safari clients do).
-    // The fallback widens to android/mweb for videos the primary set misses.
+    // tv_embedded returns the full adaptive ladder (up to 2160p/4K) over plain https with no
+    // PO token required, where tv/web alone often return only the 360p progressive format.
+    // It MUST be used alone: combining it with web/tv in one player-client list makes yt-dlp
+    // collapse back to the 360p-only set (confirmed). The Safe Fallback attempt uses the
+    // proven tv,web set for videos/environments where tv_embedded gets SABR'd or returns nothing.
     if (attempt.usePlayerClient) {
-      args.push("--extractor-args", "youtube:player-client=android,mweb,web");
-    } else {
       args.push("--extractor-args", "youtube:player-client=tv,web");
+    } else {
+      args.push("--extractor-args", "youtube:player-client=tv_embedded");
     }
     args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
 
@@ -1514,11 +1547,12 @@ export async function inspectMedia(sourceUrl) {
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false, usePlayerClient = true }) {
   const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "deno", "--no-warnings", "--no-playlist", ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
   // Match the client set used in inspectMedia so the selected format IDs resolve at download
-  // time. usePlayerClient widens to android/mweb as a fallback.
+  // time. tv_embedded (used alone) exposes the full adaptive ladder up to 4K; the Safe
+  // Fallback uses tv,web. They must not be combined or yt-dlp collapses to the 360p-only set.
   if (usePlayerClient) {
-    args.push("--extractor-args", "youtube:player-client=android,mweb,web");
-  } else {
     args.push("--extractor-args", "youtube:player-client=tv,web");
+  } else {
+    args.push("--extractor-args", "youtube:player-client=tv_embedded");
   }
 
   // Optimize download performance by writing directly to final file & skipping unnecessary disk/metadata tasks
@@ -1614,7 +1648,7 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   if (isYouTube) {
-    args.push("--extractor-args", "youtube:player-client=tv,web");
+    args.push("--extractor-args", "youtube:player-client=tv_embedded");
   }
 
   args.push("-f", selector || "best", "-o", "-", sourceUrl);
