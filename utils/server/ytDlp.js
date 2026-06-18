@@ -1349,9 +1349,14 @@ export async function inspectMedia(sourceUrl) {
     // TEMP DIAGNOSTIC: --verbose + live stderr streaming so we can see WHERE yt-dlp hangs
     // on Hugging Face. Previous runs were killed with empty stderr because execFileAsync
     // buffered everything and lost it on SIGTERM. We stream it live instead.
-    const args = ["--ignore-config", "--geo-bypass", "--verbose", "--js-runtimes", "node", "--socket-timeout", socketTimeout, ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
+    const args = ["--ignore-config", "--geo-bypass", "--verbose", "--js-runtimes", "deno", "--socket-timeout", socketTimeout, ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
+    // YouTube's default web_safari client forces SABR streaming, which strips format URLs and
+    // leaves only images. The tv/web clients return direct format URLs. The fallback attempt
+    // widens to android/mweb in case tv is unavailable for a given video.
     if (attempt.usePlayerClient) {
-      args.push("--extractor-args", "youtube:player-client=web,mweb,android");
+      args.push("--extractor-args", "youtube:player-client=android,mweb,web");
+    } else {
+      args.push("--extractor-args", "youtube:player-client=tv,web");
     }
     args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
 
@@ -1482,9 +1487,13 @@ export async function inspectMedia(sourceUrl) {
 }
 
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false, usePlayerClient = true }) {
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "deno", "--no-warnings", "--no-playlist", ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
+  // Prefer tv/web clients which return direct format URLs; web_safari forces SABR and breaks
+  // downloads. usePlayerClient widens to android/mweb as a fallback.
   if (usePlayerClient) {
-    args.push("--extractor-args", "youtube:player-client=web,mweb,android");
+    args.push("--extractor-args", "youtube:player-client=android,mweb,web");
+  } else {
+    args.push("--extractor-args", "youtube:player-client=tv,web");
   }
 
   // Optimize download performance by writing directly to final file & skipping unnecessary disk/metadata tasks
@@ -1576,13 +1585,13 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 
   const hasCookies = await hasCookiesConfigured();
   const cookiesArg = await getCookiesArg(sourceUrl, hasCookies);
-  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "node", "--no-warnings", "--no-playlist", ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
+  const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "deno", "--no-warnings", "--no-playlist", ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
 
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   if (isYouTube) {
-    args.push("--extractor-args", "youtube:player-client=web,mweb,android");
+    args.push("--extractor-args", "youtube:player-client=tv,web");
   }
-  
+
   args.push("-f", selector || "best", "-o", "-", sourceUrl);
   args.unshift(...cookiesArg);
 

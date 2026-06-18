@@ -5,7 +5,7 @@ FROM node:20-bookworm-slim
 # "canvas" dependency only ships prebuilt binaries for glibc Linux. On musl/Alpine it
 # has to compile from source, which is fragile and needs a long list of Cairo/Pango libs.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 python3-venv python3-pip ffmpeg curl git build-essential ca-certificates && \
+    apt-get install -y --no-install-recommends python3 python3-venv python3-pip ffmpeg curl git build-essential ca-certificates unzip && \
     rm -rf /var/lib/apt/lists/*
 
 # Create a virtual environment for yt-dlp to avoid PEP 668 restrictions and install yt-dlp
@@ -26,6 +26,12 @@ RUN git clone --depth 1 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.
     cd /root/bgutil-ytdlp-pot-provider/server && \
     npm ci && \
     npx tsc
+
+# Install Deno as the JS runtime for yt-dlp's signature / n-challenge solver. YouTube requires
+# solving a JavaScript challenge to unlock the real video format URLs; Node 20 is flagged
+# "unsupported" by yt-dlp's EJS solver, so without Deno every format URL gets stripped and only
+# images remain ("Requested format is not available"). Deno is yt-dlp's recommended runtime.
+RUN curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh
 
 # Set working directory
 WORKDIR /app
