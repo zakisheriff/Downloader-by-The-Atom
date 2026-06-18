@@ -17,6 +17,12 @@ RUN python3 -m venv /usr/local/yt-dlp-venv && \
     /usr/local/yt-dlp-venv/bin/pip install --no-cache-dir -U "yt-dlp[default]" "bgutil-ytdlp-pot-provider" "curl_cffi" && \
     ln -s /usr/local/yt-dlp-venv/bin/yt-dlp /usr/local/bin/yt-dlp
 
+# Remove the bgutil SCRIPT-based PO-token provider, keeping only the HTTP one (we run the
+# bgutil HTTP server in docker-entrypoint.sh). The script provider re-downloads its entire
+# npm dependency tree through Deno on use, adding huge latency. Deno itself stays installed
+# below and is still used for yt-dlp's JS challenge solver (a separate component, yt_dlp_ejs).
+RUN find /usr/local/yt-dlp-venv -path '*yt_dlp_plugins*' -iname '*bgutil*script*' -delete || true
+
 # Datacenter IPs (Hugging Face/Vercel) get blocked by YouTube with "Sign in to confirm
 # you're not a bot", even though the same code works fine from a residential IP (localhost).
 # The bgutil PO-token provider generates proof-of-origin tokens so yt-dlp's requests look

@@ -1350,13 +1350,13 @@ export async function inspectMedia(sourceUrl) {
     // on Hugging Face. Previous runs were killed with empty stderr because execFileAsync
     // buffered everything and lost it on SIGTERM. We stream it live instead.
     const args = ["--ignore-config", "--geo-bypass", "--verbose", "--js-runtimes", "deno", "--socket-timeout", socketTimeout, ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
-    // YouTube's default web_safari client forces SABR streaming, which strips format URLs and
-    // leaves only images. The tv/web clients return direct format URLs. The fallback attempt
-    // widens to android/mweb in case tv is unavailable for a given video.
+    // Use yt-dlp's full default client set so the complete adaptive format ladder (720p/1080p/
+    // 1440p/4K, which are video-only and need merging) comes through, not just the 360p
+    // progressive stream. The fallback widens to android/mweb for videos the default set misses.
     if (attempt.usePlayerClient) {
       args.push("--extractor-args", "youtube:player-client=android,mweb,web");
     } else {
-      args.push("--extractor-args", "youtube:player-client=tv,web");
+      args.push("--extractor-args", "youtube:player-client=default");
     }
     args.push(...cookiesArg, "--dump-single-json", "--no-playlist", "--skip-download", sourceUrl);
 
@@ -1488,12 +1488,12 @@ export async function inspectMedia(sourceUrl) {
 
 function buildDownloadArgs({ sourceUrl, selector, mode, ext, outputTemplate, recode = false, usePlayerClient = true }) {
   const args = ["--ignore-config", "--geo-bypass", "--js-runtimes", "deno", "--no-warnings", "--no-playlist", ...getImpersonateArg(), ...getProxyArg(), ...getPotProviderArg()];
-  // Prefer tv/web clients which return direct format URLs; web_safari forces SABR and breaks
-  // downloads. usePlayerClient widens to android/mweb as a fallback.
+  // Match the client set used in inspectMedia so the selected format IDs resolve at download
+  // time. usePlayerClient widens to android/mweb as a fallback.
   if (usePlayerClient) {
     args.push("--extractor-args", "youtube:player-client=android,mweb,web");
   } else {
-    args.push("--extractor-args", "youtube:player-client=tv,web");
+    args.push("--extractor-args", "youtube:player-client=default");
   }
 
   // Optimize download performance by writing directly to final file & skipping unnecessary disk/metadata tasks
@@ -1589,7 +1589,7 @@ export async function streamDownloadDirect({ sourceUrl, selector, ext }) {
 
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   if (isYouTube) {
-    args.push("--extractor-args", "youtube:player-client=tv,web");
+    args.push("--extractor-args", "youtube:player-client=default");
   }
 
   args.push("-f", selector || "best", "-o", "-", sourceUrl);
