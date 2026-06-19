@@ -114,6 +114,9 @@ function isImpersonateAvailable() {
 }
 
 function getImpersonateArg() {
+  if (process.env.SPACE_ID || process.env.SPACE_HOST) {
+    return ["--impersonate", "chrome"];
+  }
   return isImpersonateAvailable() ? ["--impersonate", YT_DLP_IMPERSONATE] : [];
 }
 
@@ -1144,15 +1147,21 @@ export async function fetchInstagramComments(shortcode, wantedCommentId = "") {
   let minId = "";
   // Up to 4 pages (~ a few hundred comments) so a linked comment is likely captured without
   // hammering Instagram. Stop early once we find the specifically-requested comment.
+  let domain = "i.instagram.com";
   for (let page = 0; page < 4; page++) {
     const url =
-      `https://i.instagram.com/api/v1/media/${mediaId}/comments/?can_support_threading=true&permalink_enabled=false` +
+      `https://${domain}/api/v1/media/${mediaId}/comments/?can_support_threading=true&permalink_enabled=false` +
       (minId ? `&min_id=${encodeURIComponent(minId)}` : "");
     let data;
     try {
       data = await fetchInstagramJson(url);
     } catch (e) {
-      console.warn(`fetchInstagramComments: page ${page} failed:`, e.message);
+      console.warn(`fetchInstagramComments: page ${page} failed for ${domain}:`, e.message);
+      if (domain === "i.instagram.com") {
+        domain = "www.instagram.com";
+        page--; // Retry the same page with fallback domain
+        continue;
+      }
       break;
     }
 
