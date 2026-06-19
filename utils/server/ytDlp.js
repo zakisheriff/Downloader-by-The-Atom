@@ -1616,7 +1616,7 @@ async function inspectMediaUncached(sourceUrl) {
     // Deno JS-challenge solving plus the PO-token round trip legitimately takes 20-40s on HF.
     // The old 30s budget was killing requests mid-"Downloading player". Give it real room.
     const socketTimeout = "20";
-    const execTimeout = 60000;
+    const execTimeout = isYouTube ? 20000 : 40000;
 
     console.log(`inspectMedia: Trying attempt '${attempt.name}' (Cookies: ${cookiesArg.length > 0 ? "Yes" : "No"}, Player Client: ${attempt.usePlayerClient}, Timeout: ${execTimeout}ms)`);
 

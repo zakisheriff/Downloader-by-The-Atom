@@ -14,7 +14,7 @@ RUN apt-get update && \
 # drops the plain Python TLS handshake with "TLS/SSL connection has been closed (EOF)" before
 # any HTTP response. Impersonating Chrome's TLS fingerprint makes YouTube accept the connection.
 RUN python3 -m venv /usr/local/yt-dlp-venv && \
-    /usr/local/yt-dlp-venv/bin/pip install --no-cache-dir -U "yt-dlp[default]" "bgutil-ytdlp-pot-provider" "curl_cffi<0.15" && \
+    /usr/local/yt-dlp-venv/bin/pip install --no-cache-dir -U "yt-dlp[default]" "bgutil-ytdlp-pot-provider" "curl_cffi" && \
     ln -s /usr/local/yt-dlp-venv/bin/yt-dlp /usr/local/bin/yt-dlp
 
 # Remove the bgutil SCRIPT-based PO-token provider, keeping only the HTTP one (we run the
