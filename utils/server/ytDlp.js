@@ -268,14 +268,14 @@ async function getCookiesArg(sourceUrl, forceCookies = false) {
   const tmpTxtPath = path.join(os.tmpdir(), "fetch-by-the-atom-cookies.txt");
   
   console.log("getCookiesArg: Checking cookies configuration...");
-  // 1. Decode/convert from environment variable if available
-  if (process.env.YT_DLP_COOKIES_BASE64) {
-    const rawLen = process.env.YT_DLP_COOKIES_BASE64.length;
-    console.log(`getCookiesArg: YT_DLP_COOKIES_BASE64 env var found. Length: ${rawLen}`);
-    if (process.env.YT_DLP_COOKIES_BASE64 !== lastProcessedBase64 || !existsSync(tmpTxtPath)) {
+  const envCookieString = process.env.YT_COOKIES_BASE64 || process.env.YT_DLP_COOKIES_BASE64;
+  if (envCookieString) {
+    const rawLen = envCookieString.length;
+    console.log(`getCookiesArg: Environment cookies env var found. Length: ${rawLen}`);
+    if (envCookieString !== lastProcessedBase64 || !existsSync(tmpTxtPath)) {
       try {
         // Clean all whitespace from the environment variable
-        const cleanBase64 = process.env.YT_DLP_COOKIES_BASE64.replace(/\s/g, "");
+        const cleanBase64 = envCookieString.replace(/\s/g, "");
         console.log(`getCookiesArg: Cleaned base64 length: ${cleanBase64.length}`);
         // Split by base64 delimiters (comma, semicolon) or padding (=, ==) to handle concatenated values
         const chunks = cleanBase64.split(/[,;=]+/).filter(Boolean);
@@ -407,20 +407,24 @@ async function getCookiesArg(sourceUrl, forceCookies = false) {
 }
 
 async function hasCookiesConfigured() {
-  if (process.env.YT_DLP_COOKIES_BASE64) {
+  if (process.env.YT_COOKIES_BASE64 || process.env.YT_DLP_COOKIES_BASE64) {
     return true;
   }
   try {
-    const files = await readdir(process.cwd());
-    for (const file of files) {
-      const lower = file.toLowerCase();
-      if (
-        lower.endsWith("cookies.json") ||
-        lower.endsWith("cookie.json") ||
-        lower.endsWith("cookies.txt") ||
-        lower.endsWith("cookie.txt")
-      ) {
-        return true;
+    const dirs = [process.cwd()];
+    const sub = path.join(process.cwd(), "fetch-by-the-atom");
+    if (existsSync(sub)) dirs.push(sub);
+
+    for (const dir of dirs) {
+      if (!existsSync(dir)) continue;
+      const files = await readdir(dir);
+      for (const file of files) {
+        const lower = file.toLowerCase();
+        if (
+          lower.includes("cookie") && (lower.endsWith(".json") || lower.endsWith(".txt"))
+        ) {
+          return true;
+        }
       }
     }
   } catch (e) {
@@ -837,9 +841,10 @@ async function getInstagramCookieString() {
   let instagramCookies = [];
   
   // 1. Check env var
-  if (process.env.YT_DLP_COOKIES_BASE64) {
+  const envCookieString = process.env.INSTA_COOKIES_BASE64 || process.env.YT_DLP_COOKIES_BASE64;
+  if (envCookieString) {
     try {
-      const cleanBase64 = process.env.YT_DLP_COOKIES_BASE64.replace(/\s/g, "");
+      const cleanBase64 = envCookieString.replace(/\s/g, "");
       const chunks = cleanBase64.split(/[,;=]+/).filter(Boolean);
       for (const chunk of chunks) {
         const decoded = Buffer.from(chunk, "base64").toString("utf-8").trim();
