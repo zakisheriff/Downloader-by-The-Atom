@@ -814,12 +814,6 @@ function applyServerAvailability(formats, { serverWarning = "", sourceUrl = "", 
 }
 
 function normalizeWarningText(stderr = "") {
-  const lower = stderr.toLowerCase();
-
-  if (lower.includes("po token") || lower.includes("sabr streaming")) {
-    return "Some higher YouTube qualities may need a newer yt-dlp build or a configured YouTube PO token on the server.";
-  }
-
   return "";
 }
 
