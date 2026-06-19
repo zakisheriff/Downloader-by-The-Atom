@@ -93,7 +93,6 @@ const YT_DLP_IMPERSONATE = process.env.YT_DLP_IMPERSONATE || "firefox";
 let impersonateAvailable = null;
 function isImpersonateAvailable() {
   if (!YT_DLP_IMPERSONATE || YT_DLP_IMPERSONATE === "off") return false;
-  if (process.env.SPACE_ID || process.env.SPACE_HOST) return true;
   if (impersonateAvailable === null) {
     try {
       const stdout = execFileSync(YT_DLP_BIN, ["--list-impersonate-targets"], { encoding: "utf8" });
@@ -114,9 +113,6 @@ function isImpersonateAvailable() {
 }
 
 function getImpersonateArg() {
-  if (process.env.SPACE_ID || process.env.SPACE_HOST) {
-    return ["--impersonate", "firefox"];
-  }
   return isImpersonateAvailable() ? ["--impersonate", YT_DLP_IMPERSONATE] : [];
 }
 
