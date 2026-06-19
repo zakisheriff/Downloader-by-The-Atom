@@ -331,19 +331,26 @@ async function getCookiesArg(sourceUrl, forceCookies = false) {
   // 2. Check for local cookie files (JSON preferred, then Netscape txt)
   let localFiles = [];
   try {
-    const files = await readdir(process.cwd());
-    for (const file of files) {
-      const lower = file.toLowerCase();
-      if (lower.endsWith("cookies.json") || lower.endsWith("cookie.json")) {
-        localFiles.push({ path: path.join(process.cwd(), file), isJson: true, name: file, priority: 1 });
-      } else if (lower.endsWith("cookies.txt") || lower.endsWith("cookie.txt")) {
-        localFiles.push({ path: path.join(process.cwd(), file), isJson: false, name: file, priority: 2 });
+    const dirs = [process.cwd()];
+    const sub = path.join(process.cwd(), "fetch-by-the-atom");
+    if (existsSync(sub)) dirs.push(sub);
+
+    for (const dir of dirs) {
+      if (!existsSync(dir)) continue;
+      const files = await readdir(dir);
+      for (const file of files) {
+        const lower = file.toLowerCase();
+        if (lower.endsWith("cookies.json") || lower.endsWith("cookie.json")) {
+          localFiles.push({ path: path.join(dir, file), isJson: true, name: file, priority: 1 });
+        } else if (lower.endsWith("cookies.txt") || lower.endsWith("cookie.txt")) {
+          localFiles.push({ path: path.join(dir, file), isJson: false, name: file, priority: 2 });
+        }
       }
     }
     // Sort so JSON files are processed before TXT files
     localFiles.sort((a, b) => a.priority - b.priority);
   } catch (e) {
-    console.error("Failed to read local directory for cookies:", e);
+    console.error("Failed to read directories for cookies:", e);
   }
   
   let lastError = null;
@@ -867,30 +874,37 @@ async function getInstagramCookieString() {
   
   // 2. Read local files
   try {
-    const files = await readdir(process.cwd());
-    for (const file of files) {
-      const lower = file.toLowerCase();
-      if (lower.includes("instagram") && (lower.endsWith(".json") || lower.endsWith(".txt"))) {
-        const content = await readFile(path.join(process.cwd(), file), "utf-8");
-        if (lower.endsWith(".json")) {
-          try {
-            const parsed = JSON.parse(content);
-            if (Array.isArray(parsed)) {
-              instagramCookies.push(...parsed);
-            }
-          } catch {}
-        } else {
-          // Netscape parser
-          const lines = content.split("\n");
-          for (const line of lines) {
-            if (line.startsWith("#") || !line.trim()) continue;
-            const parts = line.split("\t");
-            if (parts.length >= 7) {
-              const domain = parts[0];
-              const name = parts[5];
-              const value = parts[6]?.trim() || "";
-              if (domain.includes("instagram.com")) {
-                instagramCookies.push({ name, value, domain });
+    const dirs = [process.cwd()];
+    const sub = path.join(process.cwd(), "fetch-by-the-atom");
+    if (existsSync(sub)) dirs.push(sub);
+
+    for (const dir of dirs) {
+      if (!existsSync(dir)) continue;
+      const files = await readdir(dir);
+      for (const file of files) {
+        const lower = file.toLowerCase();
+        if (lower.includes("instagram") && (lower.endsWith(".json") || lower.endsWith(".txt"))) {
+          const content = await readFile(path.join(dir, file), "utf-8");
+          if (lower.endsWith(".json")) {
+            try {
+              const parsed = JSON.parse(content);
+              if (Array.isArray(parsed)) {
+                instagramCookies.push(...parsed);
+              }
+            } catch {}
+          } else {
+            // Netscape parser
+            const lines = content.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("#") || !line.trim()) continue;
+              const parts = line.split("\t");
+              if (parts.length >= 7) {
+                const domain = parts[0];
+                const name = parts[5];
+                const value = parts[6]?.trim() || "";
+                if (domain.includes("instagram.com")) {
+                  instagramCookies.push({ name, value, domain });
+                }
               }
             }
           }
@@ -898,24 +912,31 @@ async function getInstagramCookieString() {
       }
     }
   } catch (e) {
-    console.error("Error scanning local files for Instagram cookies:", e);
+    console.error("Error scanning directories for Instagram cookies:", e);
   }
 
   // Also fall back to general local cookie files if no specific instagram ones found
   if (instagramCookies.length === 0) {
     try {
-      const files = await readdir(process.cwd());
-      for (const file of files) {
-        const lower = file.toLowerCase();
-        if ((lower.endsWith("cookies.json") || lower.endsWith("cookie.json")) && !lower.includes("youtube")) {
-          const content = await readFile(path.join(process.cwd(), file), "utf-8");
-          try {
-            const parsed = JSON.parse(content);
-            if (Array.isArray(parsed)) {
-              const filtered = parsed.filter(c => c.domain && c.domain.includes("instagram.com"));
-              instagramCookies.push(...filtered);
-            }
-          } catch {}
+      const dirs = [process.cwd()];
+      const sub = path.join(process.cwd(), "fetch-by-the-atom");
+      if (existsSync(sub)) dirs.push(sub);
+
+      for (const dir of dirs) {
+        if (!existsSync(dir)) continue;
+        const files = await readdir(dir);
+        for (const file of files) {
+          const lower = file.toLowerCase();
+          if ((lower.endsWith("cookies.json") || lower.endsWith("cookie.json")) && !lower.includes("youtube")) {
+            const content = await readFile(path.join(dir, file), "utf-8");
+            try {
+              const parsed = JSON.parse(content);
+              if (Array.isArray(parsed)) {
+                const filtered = parsed.filter(c => c.domain && c.domain.includes("instagram.com"));
+                instagramCookies.push(...filtered);
+              }
+            } catch {}
+          }
         }
       }
     } catch {}
