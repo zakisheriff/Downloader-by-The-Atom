@@ -82,7 +82,7 @@ function getFallbackYouTubeClient() {
 // closed (EOF)") before any HTTP response — confirmed in the live verbose logs. Mimicking
 // Chrome's fingerprint makes YouTube accept the connection. Can be disabled via env if a
 // build ever ships without curl_cffi.
-const YT_DLP_IMPERSONATE = process.env.YT_DLP_IMPERSONATE || "chrome";
+const YT_DLP_IMPERSONATE = process.env.YT_DLP_IMPERSONATE || "firefox";
 
 // Whether the requested impersonate target is actually usable. curl_cffi (the backend that
 // powers --impersonate) isn't installed in every environment — notably some local/Homebrew
@@ -115,7 +115,7 @@ function isImpersonateAvailable() {
 
 function getImpersonateArg() {
   if (process.env.SPACE_ID || process.env.SPACE_HOST) {
-    return ["--impersonate", "chrome"];
+    return ["--impersonate", "firefox"];
   }
   return isImpersonateAvailable() ? ["--impersonate", YT_DLP_IMPERSONATE] : [];
 }
