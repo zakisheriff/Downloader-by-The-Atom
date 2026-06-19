@@ -1588,10 +1588,10 @@ async function inspectMediaUncached(sourceUrl) {
     if (hasCookies) {
       attempts.push({ useCookies: true, usePlayerClient: false, name: "Cookies, Default" });
       attempts.push({ useCookies: true, usePlayerClient: true, name: "Cookies, Safe Fallback" });
-    } else {
-      attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, Default" });
-      attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
     }
+    // Always append anonymous attempts so we can fall back to token-only downloads if cookies are expired
+    attempts.push({ useCookies: false, usePlayerClient: false, name: "Anonymous, Default" });
+    attempts.push({ useCookies: false, usePlayerClient: true, name: "Anonymous, Safe Fallback" });
   } else {
     // Non-YouTube URLs run with default cookies, no player-client
     attempts.push({ useCookies: false, usePlayerClient: false, name: "Default" });
