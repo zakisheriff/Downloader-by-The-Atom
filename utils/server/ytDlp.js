@@ -343,9 +343,9 @@ async function getCookiesArg(sourceUrl, forceCookies = false) {
       const files = await readdir(dir);
       for (const file of files) {
         const lower = file.toLowerCase();
-        if (lower.endsWith("cookies.json") || lower.endsWith("cookie.json")) {
+        if (lower.includes("cookie") && lower.endsWith(".json")) {
           localFiles.push({ path: path.join(dir, file), isJson: true, name: file, priority: 1 });
-        } else if (lower.endsWith("cookies.txt") || lower.endsWith("cookie.txt")) {
+        } else if (lower.includes("cookie") && lower.endsWith(".txt")) {
           localFiles.push({ path: path.join(dir, file), isJson: false, name: file, priority: 2 });
         }
       }
