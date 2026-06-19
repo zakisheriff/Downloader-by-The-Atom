@@ -976,8 +976,14 @@ sys.exit(1)
 `.trim();
 
 async function instagramHttpGet(url, headers) {
+  const pythonBin = existsSync("/usr/local/yt-dlp-venv/bin/python3")
+    ? "/usr/local/yt-dlp-venv/bin/python3"
+    : existsSync("/usr/local/yt-dlp-venv/bin/python")
+    ? "/usr/local/yt-dlp-venv/bin/python"
+    : "python3";
+
   const { stdout, stderr } = await execFileAsync(
-    "python3",
+    pythonBin,
     ["-c", IG_HTTP_PY, JSON.stringify(headers), url],
     { timeout: 16000, maxBuffer: 8 * 1024 * 1024 }
   );
