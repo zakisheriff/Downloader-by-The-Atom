@@ -28,7 +28,18 @@ export async function GET(request) {
 
   const shortcode = shortcodeMatch[1];
   const commentIdMatch = sourceUrl.match(/\/c\/(\d+)/);
-  const wantedCommentId = commentIdMatch ? commentIdMatch[1] : "";
+  let wantedCommentId = commentIdMatch ? commentIdMatch[1] : "";
+  if (!wantedCommentId) {
+    try {
+      const parsedUrl = new URL(sourceUrl);
+      wantedCommentId = parsedUrl.searchParams.get("comment_id") || "";
+    } catch {
+      const commentIdParamMatch = sourceUrl.match(/[?&]comment_id=(\d+)/);
+      if (commentIdParamMatch) {
+        wantedCommentId = commentIdParamMatch[1];
+      }
+    }
+  }
 
   try {
     const { post, comments } = await fetchInstagramComments(shortcode, wantedCommentId);
