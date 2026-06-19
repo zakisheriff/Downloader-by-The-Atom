@@ -936,6 +936,57 @@ async function getInstagramCookieString() {
   return "";
 }
 
+// Instagram fingerprints the TLS handshake (JA3) and silently drops vanilla Python `urllib`
+// and Node `fetch` connections coming from datacenter IPs (Hugging Face/Vercel) — the handshake
+// just times out ("_ssl.c:975: The handshake operation timed out"). yt-dlp gets through because
+// it uses curl_cffi, which mimics a real Chrome TLS fingerprint. This helper does the same: it
+// runs one Python process that tries curl_cffi (browser fingerprint) first and only falls back
+// to urllib if curl_cffi isn't importable. Returns the parsed JSON body for the URL.
+const IG_HTTP_PY = `
+import json, sys
+headers = json.loads(sys.argv[1])
+url = sys.argv[2]
+errors = []
+# 1) curl_cffi with a Chrome TLS fingerprint — the only thing Instagram reliably accepts
+#    from a datacenter IP. This is the same backend yt-dlp uses successfully.
+try:
+    from curl_cffi import requests as creq
+    r = creq.get(url, headers=headers, impersonate="chrome", timeout=12)
+    if r.status_code == 200 and r.text.strip():
+        sys.stdout.write(r.text)
+        sys.exit(0)
+    errors.append("curl_cffi HTTP %s" % r.status_code)
+except Exception as e:
+    errors.append("curl_cffi: %s" % e)
+# 2) Last-resort vanilla urllib (usually dropped on datacenter IPs, but free to try).
+try:
+    import urllib.request, ssl
+    ctx = ssl.create_default_context()
+    req = urllib.request.Request(url, headers=headers)
+    resp = urllib.request.urlopen(req, timeout=10, context=ctx)
+    body = resp.read().decode('utf-8')
+    if body.strip():
+        sys.stdout.write(body)
+        sys.exit(0)
+    errors.append("urllib: empty body")
+except Exception as e:
+    errors.append("urllib: %s" % e)
+sys.stderr.write(" | ".join(errors))
+sys.exit(1)
+`.trim();
+
+async function instagramHttpGet(url, headers) {
+  const { stdout, stderr } = await execFileAsync(
+    "python3",
+    ["-c", IG_HTTP_PY, JSON.stringify(headers), url],
+    { timeout: 16000, maxBuffer: 8 * 1024 * 1024 }
+  );
+  if (!stdout || !stdout.trim()) {
+    throw new Error(stderr ? `IG fetch failed: ${stderr.trim()}` : "Empty response.");
+  }
+  return JSON.parse(stdout);
+}
+
 async function fetchInstagramMediaInfo(shortcode) {
   const mediaId = shortcodeToId(shortcode);
   
@@ -981,51 +1032,26 @@ async function fetchInstagramMediaInfo(shortcode) {
     console.log("fetchInstagramMediaInfo: Hugging Face environment detected — skipping native fetch (known to timeout).");
   }
 
-  // Step 2: Python urllib fallback (uses the same networking stack as yt-dlp)
-  // On Hugging Face, Node.js fetch and curl both get ConnectTimeoutError to instagram.com,
-  // but yt-dlp (Python/urllib) connects successfully. So we use Python as our HTTP client.
-  console.log("fetchInstagramMediaInfo: All native fetch attempts failed. Trying Python urllib fallback...");
+  // Step 2: Python curl_cffi fallback (browser TLS fingerprint — the only thing Instagram
+  // reliably accepts from a datacenter IP; see instagramHttpGet). Falls back to urllib inside.
+  console.log("fetchInstagramMediaInfo: Native fetch unavailable/failed. Trying Python curl_cffi fallback...");
 
   for (const url of urls) {
-    console.log(`fetchInstagramMediaInfo: Trying Python urllib for: ${url}`);
+    console.log(`fetchInstagramMediaInfo: Trying Python curl_cffi for: ${url}`);
     try {
-      const headersJson = JSON.stringify(headers);
-      // Inline Python script that uses urllib.request (same stack as yt-dlp)
-      const pyScript = `
-import urllib.request, json, sys, ssl
-ctx = ssl.create_default_context()
-headers = json.loads(sys.argv[1])
-req = urllib.request.Request(sys.argv[2], headers=headers)
-try:
-    resp = urllib.request.urlopen(req, timeout=8, context=ctx)
-    sys.stdout.write(resp.read().decode('utf-8'))
-except Exception as e:
-    sys.stderr.write(str(e))
-    sys.exit(1)
-`.trim();
-
-      const { stdout, stderr } = await execFileAsync("python3", ["-c", pyScript, headersJson, url], {
-        timeout: 12000,
-        maxBuffer: 5 * 1024 * 1024
-      });
-
-      if (!stdout || !stdout.trim()) {
-        throw new Error(stderr ? `Python error: ${stderr.trim()}` : "Python returned empty response.");
-      }
-
-      const data = JSON.parse(stdout);
+      const data = await instagramHttpGet(url, headers);
       const item = data.items?.[0] || data.graphql?.shortcode_media;
       if (item) {
-        console.log("fetchInstagramMediaInfo: Python urllib succeeded!");
+        console.log("fetchInstagramMediaInfo: Python curl_cffi succeeded!");
         return item;
       }
-      throw new Error("No media items in Python response.");
+      throw new Error("No media items in response.");
     } catch (pyError) {
-      console.error(`fetchInstagramMediaInfo: Python urllib failed for ${url}:`, pyError.message);
+      console.error(`fetchInstagramMediaInfo: Python fetch failed for ${url}:`, pyError.message);
     }
   }
 
-  throw new Error("All Instagram API fetch strategies (native fetch + Python urllib) failed for all endpoints.");
+  throw new Error("All Instagram API fetch strategies (native fetch + Python curl_cffi/urllib) failed for all endpoints.");
 }
 
 // Generic Instagram private-API GET that mirrors fetchInstagramMediaInfo's networking: native
@@ -1058,28 +1084,9 @@ async function fetchInstagramJson(url) {
     }
   }
 
-  // Python urllib fallback (same stack as yt-dlp — works on Hugging Face where Node fetch can't).
-  const pyScript = `
-import urllib.request, json, sys, ssl
-ctx = ssl.create_default_context()
-headers = json.loads(sys.argv[1])
-req = urllib.request.Request(sys.argv[2], headers=headers)
-try:
-    resp = urllib.request.urlopen(req, timeout=8, context=ctx)
-    sys.stdout.write(resp.read().decode('utf-8'))
-except Exception as e:
-    sys.stderr.write(str(e))
-    sys.exit(1)
-`.trim();
-
-  const { stdout, stderr } = await execFileAsync("python3", ["-c", pyScript, JSON.stringify(headers), url], {
-    timeout: 12000,
-    maxBuffer: 5 * 1024 * 1024
-  });
-  if (!stdout || !stdout.trim()) {
-    throw new Error(stderr ? `Python error: ${stderr.trim()}` : "Python returned empty response.");
-  }
-  return JSON.parse(stdout);
+  // Python curl_cffi fallback (browser TLS fingerprint — works on datacenter IPs where Node
+  // fetch and plain urllib get their handshake dropped). Falls back to urllib internally.
+  return await instagramHttpGet(url, headers);
 }
 
 // Fetch comments for an Instagram post/reel. Pages through a few times so a specific linked
@@ -1444,6 +1451,15 @@ function parseInstagramMediaInfo(rawItem, sourceUrl) {
   };
 }
 
+// De-dupe concurrent identical inspects. The client (and React strict-mode / retries) can fire
+// several inspects for the same URL at once; without this each one spawns its own yt-dlp +
+// Python processes, multiplying load and the chance of rate-limiting. Callers that arrive while
+// an inspect is in flight await the same promise instead of starting a parallel extraction.
+if (!global.__inspectInFlight) {
+  global.__inspectInFlight = new Map();
+}
+const inspectInFlight = global.__inspectInFlight;
+
 export async function inspectMedia(sourceUrl) {
   const cached = getCachedInspectResult(sourceUrl);
   if (cached) {
@@ -1451,6 +1467,20 @@ export async function inspectMedia(sourceUrl) {
     return cached;
   }
 
+  const pending = inspectInFlight.get(sourceUrl);
+  if (pending) {
+    console.log("inspectMedia: Identical inspect already in flight — awaiting shared result.");
+    return pending;
+  }
+
+  const work = inspectMediaUncached(sourceUrl).finally(() => {
+    inspectInFlight.delete(sourceUrl);
+  });
+  inspectInFlight.set(sourceUrl, work);
+  return work;
+}
+
+async function inspectMediaUncached(sourceUrl) {
   let stdout, stderr;
   const isYouTube = sourceUrl && (sourceUrl.includes("youtube.com") || sourceUrl.includes("youtu.be"));
   const isInstagram = sourceUrl && (sourceUrl.includes("instagram.com") || sourceUrl.includes("instagr.am"));
