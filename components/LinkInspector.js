@@ -446,26 +446,26 @@ export default function LinkInspector() {
             </GlassButton>
           </CustomGlassInputCard>
         ) : (
-          <CustomGlassInputCard className={styles.inputCard} style={{ maxWidth: "600px", margin: "0 auto" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "12px 8px", textAlign: "center", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "50%", background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444", marginBottom: "8px" }}>
+          <CustomGlassInputCard className={styles.inputCard} style={{ maxWidth: "620px", margin: "0 auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px 12px", textAlign: "center", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "50%", background: "rgba(217, 59, 59, 0.12)", border: "1px solid rgba(217, 59, 59, 0.3)", color: "var(--danger)", marginBottom: "8px" }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               </div>
-              <h2 style={{ fontSize: "1.4rem", fontWeight: "700", color: "#f5f5f1", margin: 0 }}>Backend Service Offline</h2>
-              <p style={{ color: "var(--muted)", fontSize: "0.95rem", lineHeight: "1.6", margin: 0, maxWidth: "480px" }}>
+              <h2 style={{ fontSize: "1.45rem", fontWeight: "700", color: "var(--text)", margin: 0 }}>Backend Service Offline</h2>
+              <p style={{ color: "var(--muted)", fontSize: "0.98rem", lineHeight: "1.6", margin: 0, maxWidth: "480px" }}>
                 Our Hugging Face backend space has been flagged, making hosted downloads temporarily unavailable.
               </p>
-              <p style={{ color: "#ef4444", fontSize: "0.9rem", fontWeight: "600", margin: 0 }}>
+              <p style={{ color: "var(--danger)", fontSize: "0.95rem", fontWeight: "700", margin: 0 }}>
                 However, you can run Downloader perfectly on your localhost!
               </p>
-              <div style={{ width: "100%", height: "1px", background: "rgba(255, 255, 255, 0.08)", margin: "8px 0" }} />
+              <div style={{ width: "100%", height: "1px", background: "var(--stroke)", margin: "8px 0" }} />
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", alignItems: "center" }}>
-                <span style={{ fontSize: "0.85rem", color: "var(--muted)", fontWeight: "500" }}>Run these simple commands to host it locally:</span>
-                <div style={{ background: "rgba(0, 0, 0, 0.3)", border: "1px solid rgba(255, 255, 255, 0.05)", borderRadius: "12px", padding: "12px", width: "100%", maxWidth: "440px", textAlign: "left", fontFamily: "monospace", fontSize: "0.82rem", color: "#38bdf8", overflowX: "auto", whiteSpace: "pre" }}>
-{`git clone https://github.com/zakisheriff/Downloader-by-The-Atom.git
-cd Downloader-by-The-Atom
-npm install
-npm run dev`}
+                <span style={{ fontSize: "0.85rem", color: "var(--muted)", fontWeight: "600" }}>Run these simple commands to host it locally:</span>
+                <div style={{ background: "#111827", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "12px", padding: "16px", width: "100%", maxWidth: "460px", textAlign: "left", fontFamily: "var(--font-mono), monospace", fontSize: "0.85rem", color: "#60a5fa", overflowX: "auto", whiteSpace: "pre", boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.08)", lineHeight: "1.5" }}>
+                  <span style={{ color: "#34d399" }}>$</span> git clone https://github.com/zakisheriff/Downloader-by-The-Atom.git<br />
+                  <span style={{ color: "#34d399" }}>$</span> cd Downloader-by-The-Atom<br />
+                  <span style={{ color: "#34d399" }}>$</span> npm install<br />
+                  <span style={{ color: "#34d399" }}>$</span> npm run dev
                 </div>
               </div>
               <GlassButton
