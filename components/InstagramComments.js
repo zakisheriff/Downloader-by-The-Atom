@@ -62,6 +62,7 @@ export default function InstagramComments() {
   const [copiedAll, setCopiedAll] = useState(false);
   const inputRef = useRef(null);
   const [isLocalhost, setIsLocalhost] = useState(true);
+  const [terminalCopied, setTerminalCopied] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -73,6 +74,17 @@ export default function InstagramComments() {
       setIsLocalhost(local);
     }
   }, []);
+
+  const handleCopyTerminal = async () => {
+    const text = `git clone https://github.com/zakisheriff/Downloader-by-The-Atom.git\ncd Downloader-by-The-Atom\nnpm install\nnpm run dev`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setTerminalCopied(true);
+      setTimeout(() => setTerminalCopied(false), 2000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL ||
     (typeof window !== "undefined" &&
@@ -139,7 +151,7 @@ export default function InstagramComments() {
   return (
     <LiquidGlassFilter>
       <div className={styles.page}>
-        <GlassCard className={styles.hero}>
+        <GlassCard className={styles.hero} style={!isLocalhost ? { marginTop: "40px" } : {}}>
           <p className={styles.heading}>{isLocalhost ? "Instagram comment grabber" : "Run Downloader Locally."}</p>
           {isLocalhost ? (
             <>
@@ -210,15 +222,92 @@ export default function InstagramComments() {
                 However, you can run the application perfectly on your localhost!
               </p>
               <div style={{ width: "100%", height: "1px", background: "var(--stroke)", margin: "8px 0" }} />
+              
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", alignItems: "center" }}>
                 <span style={{ fontSize: "0.85rem", color: "var(--muted)", fontWeight: "600" }}>Run these simple commands to host it locally:</span>
-                <div style={{ background: "#111827", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "12px", padding: "16px", width: "100%", maxWidth: "460px", textAlign: "left", fontFamily: "var(--font-mono), monospace", fontSize: "0.85rem", color: "#60a5fa", overflowX: "auto", whiteSpace: "pre", boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.08)", lineHeight: "1.5" }}>
-                  <span style={{ color: "#34d399" }}>$</span> git clone https://github.com/zakisheriff/Downloader-by-The-Atom.git<br />
-                  <span style={{ color: "#34d399" }}>$</span> cd Downloader-by-The-Atom<br />
-                  <span style={{ color: "#34d399" }}>$</span> npm install<br />
-                  <span style={{ color: "#34d399" }}>$</span> npm run dev
+                
+                {/* macOS Terminal style container */}
+                <div style={{
+                  width: "100%",
+                  maxWidth: "460px",
+                  background: "#18181b",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  boxShadow: "0 16px 36px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  textAlign: "left",
+                  fontFamily: "var(--font-mono), monospace",
+                  fontSize: "0.82rem",
+                  margin: "8px 0"
+                }}>
+                  {/* macOS Terminal Header */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "#27272a",
+                    padding: "10px 16px",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
+                    userSelect: "none"
+                  }}>
+                    {/* Window Controls */}
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ef4444", display: "inline-block" }}></span>
+                      <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#f59e0b", display: "inline-block" }}></span>
+                      <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#10b981", display: "inline-block" }}></span>
+                    </div>
+                    {/* Shell Title */}
+                    <span style={{ color: "#a1a1aa", fontSize: "0.75rem", fontWeight: "600" }}>zsh</span>
+                    {/* Copy button */}
+                    <button
+                      onClick={handleCopyTerminal}
+                      style={{
+                        background: "rgba(255, 255, 255, 0.04)",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        color: terminalCopied ? "#34d399" : "#a1a1aa",
+                        fontSize: "0.72rem",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        outline: "none",
+                        transition: "all 0.15s ease"
+                      }}
+                      title="Copy code to clipboard"
+                    >
+                      {terminalCopied ? (
+                        <>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {/* macOS Terminal Body */}
+                  <div style={{
+                    padding: "16px 20px",
+                    color: "#f4f4f5",
+                    lineHeight: "1.6",
+                    overflowX: "auto",
+                    whiteSpace: "pre"
+                  }}>
+                    <span style={{ color: "#34d399" }}>$</span> git clone https://github.com/zakisheriff/Downloader-by-The-Atom.git<br />
+                    <span style={{ color: "#34d399" }}>$</span> cd Downloader-by-The-Atom<br />
+                    <span style={{ color: "#34d399" }}>$</span> npm install<br />
+                    <span style={{ color: "#34d399" }}>$</span> npm run dev
+                  </div>
                 </div>
               </div>
+
               <GlassButton
                 onClick={(e) => {
                   e.stopPropagation();

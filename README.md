@@ -202,6 +202,9 @@ npm run dev
 
 Open **http://localhost:3000** in your browser.
 
+> [!WARNING]
+> **Hosted Demo Status**: The free Hugging Face backend space has been flagged/suspended. As a result, the hosted version at `downloader.theatom.lk` will automatically display a notice with commands to run the application locally on your machine via localhost where it is fully functional.
+
 ---
 
 ## 🌐 Deployment Notes
