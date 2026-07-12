@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Clipboard, Copy, Instagram, Link2, X } from "lucide-react";
@@ -150,6 +150,18 @@ export default function HeroSection() {
   const copyTimeoutRef = useRef(null);
   const inputRef = useRef(null);
   const router = useRouter();
+  const [isLocalhost, setIsLocalhost] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      const local = hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname === "[::1]" ||
+        hostname.startsWith("192.168.");
+      setIsLocalhost(local);
+    }
+  }, []);
 
   const handleContainerClick = (e) => {
     if (e.target.tagName !== "BUTTON" && !e.target.closest("button")) {
@@ -224,84 +236,123 @@ export default function HeroSection() {
 
       <div className={styles.glow} />
       <div className={styles.content}>
-        <h1 className={styles.title}>Paste the link.</h1>
+        <h1 className={styles.title}>{isLocalhost ? "Paste the link." : "Run Downloader Locally."}</h1>
 
-        <CustomGlassInputCard className={styles.inputCard} onClick={handleContainerClick}>
-          <div className={styles.inputWrap}>
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleStart()}
-              placeholder="Paste https://youtube.com/... or any supported public link"
-            />
-            {input ? (
-              <>
+        {isLocalhost ? (
+          <CustomGlassInputCard className={styles.inputCard} onClick={handleContainerClick}>
+            <div className={styles.inputWrap}>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleStart()}
+                placeholder="Paste https://youtube.com/... or any supported public link"
+              />
+              {input ? (
+                <>
+                  <GlassButton
+                    className={styles.iconBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopy();
+                    }}
+                    title={copied ? "Copied!" : "Copy link"}
+                    aria-label="Copy link"
+                    type="button"
+                    variant="ghost"
+                    intensity={4}
+                    size="sm"
+                    style={{ minWidth: "32px", width: "32px", height: "32px", borderRadius: "50%", padding: 0 }}
+                  >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                  </GlassButton>
+                  <GlassButton
+                    className={styles.iconBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClear();
+                    }}
+                    title="Clear"
+                    aria-label="Clear input"
+                    type="button"
+                    variant="ghost"
+                    intensity={4}
+                    size="sm"
+                    style={{ minWidth: "32px", width: "32px", height: "32px", borderRadius: "50%", padding: 0 }}
+                  >
+                    <X size={14} />
+                  </GlassButton>
+                </>
+              ) : (
                 <GlassButton
                   className={styles.iconBtn}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleCopy();
+                    handlePaste();
                   }}
-                  title={copied ? "Copied!" : "Copy link"}
-                  aria-label="Copy link"
+                  title="Paste from clipboard"
+                  aria-label="Paste from clipboard"
                   type="button"
                   variant="ghost"
                   intensity={4}
                   size="sm"
                   style={{ minWidth: "32px", width: "32px", height: "32px", borderRadius: "50%", padding: 0 }}
                 >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  <Clipboard size={14} />
                 </GlassButton>
-                <GlassButton
-                  className={styles.iconBtn}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClear();
-                  }}
-                  title="Clear"
-                  aria-label="Clear input"
-                  type="button"
-                  variant="ghost"
-                  intensity={4}
-                  size="sm"
-                  style={{ minWidth: "32px", width: "32px", height: "32px", borderRadius: "50%", padding: 0 }}
-                >
-                  <X size={14} />
-                </GlassButton>
-              </>
-            ) : (
+              )}
+            </div>
+            <GlassButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStart();
+              }}
+              disabled={!input.trim()}
+              className={styles.startBtn}
+              size="lg"
+              intensity={6}
+            >
+              Find media
+            </GlassButton>
+          </CustomGlassInputCard>
+        ) : (
+          <CustomGlassInputCard className={styles.inputCard} style={{ maxWidth: "600px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "12px 8px", textAlign: "center", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "48px", height: "48px", borderRadius: "50%", background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444", marginBottom: "8px" }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <h2 style={{ fontSize: "1.4rem", fontWeight: "700", color: "#f5f5f1", margin: 0 }}>Backend Service Offline</h2>
+              <p style={{ color: "var(--muted)", fontSize: "0.95rem", lineHeight: "1.6", margin: 0, maxWidth: "480px" }}>
+                Our Hugging Face backend space has been flagged, making hosted downloads temporarily unavailable.
+              </p>
+              <p style={{ color: "#ef4444", fontSize: "0.9rem", fontWeight: "600", margin: 0 }}>
+                However, you can run Downloader perfectly on your localhost!
+              </p>
+              <div style={{ width: "100%", height: "1px", background: "rgba(255, 255, 255, 0.08)", margin: "8px 0" }} />
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", alignItems: "center" }}>
+                <span style={{ fontSize: "0.85rem", color: "var(--muted)", fontWeight: "500" }}>Run these simple commands to host it locally:</span>
+                <div style={{ background: "rgba(0, 0, 0, 0.3)", border: "1px solid rgba(255, 255, 255, 0.05)", borderRadius: "12px", padding: "12px", width: "100%", maxWidth: "440px", textAlign: "left", fontFamily: "monospace", fontSize: "0.82rem", color: "#38bdf8", overflowX: "auto", whiteSpace: "pre" }}>
+{`git clone https://github.com/zakisheriff/Downloader-by-The-Atom.git
+cd Downloader-by-The-Atom
+npm install
+npm run dev`}
+                </div>
+              </div>
               <GlassButton
-                className={styles.iconBtn}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handlePaste();
+                  window.open("https://github.com/zakisheriff/Downloader-by-The-Atom", "_blank", "noopener,noreferrer");
                 }}
-                title="Paste from clipboard"
-                aria-label="Paste from clipboard"
-                type="button"
-                variant="ghost"
-                intensity={4}
-                size="sm"
-                style={{ minWidth: "32px", width: "32px", height: "32px", borderRadius: "50%", padding: 0 }}
+                size="lg"
+                intensity={8}
+                style={{ marginTop: "12px", display: "inline-flex", alignItems: "center", gap: "10px", width: "100%", maxWidth: "280px", justifyContent: "center" }}
               >
-                <Clipboard size={14} />
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                View Setup on GitHub
               </GlassButton>
-            )}
-          </div>
-          <GlassButton
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStart();
-            }}
-            disabled={!input.trim()}
-            className={styles.startBtn}
-            size="lg"
-            intensity={6}
-          >
-            Find media
-          </GlassButton>
-        </CustomGlassInputCard>
+            </div>
+          </CustomGlassInputCard>
+        )}
 
         <div className={styles.appRow} aria-label="Supported platforms">
           {supportedApps.map((app) => {
