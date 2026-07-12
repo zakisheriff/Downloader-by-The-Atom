@@ -202,9 +202,6 @@ npm run dev
 
 Open **http://localhost:3000** in your browser.
 
-> [!WARNING]
-> **Hosted Demo Status**: The free Hugging Face backend space has been flagged/suspended. As a result, the hosted version at `downloader.theatom.lk` will automatically display a notice with commands to run the application locally on your machine via localhost where it is fully functional.
-
 ---
 
 ## 🌐 Deployment Notes
@@ -214,14 +211,14 @@ To deploy the app for 100% free with no credit cards required, you can use a dec
 ### 1. Frontend (Static App)
 Deploy the Next.js frontend to **Vercel** mapped to your custom domain (e.g., `downloader.theatom.lk`). Set the environment variable:
 ```env
-NEXT_PUBLIC_API_URL=https://<your-huggingface-space-name>.hf.space
+NEXT_PUBLIC_API_URL=https://<your-render-app-name>.onrender.com
 ```
 
 ### 2. Backend (API Server)
-Deploy the Next.js app inside a Docker container on a **Hugging Face Space**.
-- **SDK**: Docker
-- **Hardware**: Basic CPU (2 vCPU, 16 GB RAM) - 100% Free
-- **Port**: `7860` (defined in the Dockerfile)
+Deploy the application backend to a platform like **Render** using Docker.
+- **Blueprint/Type**: Web Service (Docker)
+- **Instance**: Free Tier
+- **Default Port**: `10000` (automatically detected)
 
 ---
 

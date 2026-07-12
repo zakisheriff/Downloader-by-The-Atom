@@ -91,7 +91,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
         window.location.hostname === "[::1]" ||
         window.location.hostname.startsWith("192.168."))
        ? ""
-       : "https://zakisheriff-downloader-backend.hf.space");
+       : "https://downloader-by-the-atom.onrender.com");
 
     // All formats go through the background prepare → poll → ready flow.
     // Direct stdout-piping to the browser is unreliable (YouTube throttles,
@@ -261,7 +261,7 @@ export default function FormatCard({ format, sourceUrl, mediaTitle, selectable, 
       window.location.hostname === "[::1]" ||
       window.location.hostname.startsWith("192.168."))
      ? ""
-     : "https://zakisheriff-downloader-backend.hf.space");
+     : "https://downloader-by-the-atom.onrender.com");
 
   const isCdnInstagram = format.thumbnail && (format.thumbnail.includes("cdninstagram.com") || format.thumbnail.includes("instagram.com"));
   const thumbnailSrc = isCdnInstagram
